@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Abner</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --primary:#16324f;
+  --primary-dark:#0e2338;
+  --primary-light:#274b73;
+  --accent:#e9862c;
+  --accent-dark:#c96f1c;
+  --accent-soft:#fdf0e2;
+  --success:#2a9d63;
+  --danger:#d64550;
+  --bg:#eef1f5;
+  --card-bg:#ffffff;
+  --text:#1f2937;
+  --muted:#6b7280;
+  --border:#e2e6ec;
+  --radius:14px;
+  --radius-sm:9px;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;}
+h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
+
+body.dark{--bg:#101418;--card-bg:#1b2027;--text:#eef1f5;--muted:#9aa4b2;--border:#2a313b;}
+body.dark #map,body.dark #selectMap{filter:brightness(.92) contrast(1.05);}
+
+/* Login screen */
+#loginScreen{
+  position:fixed; inset:0; z-index:5000;
+  background:linear-gradient(135deg,var(--primary) 0%,var(--primary-dark) 100%);
+  display:flex; align-items:center; justify-content:center; padding:16px;
+}
+.login-card{background:var(--card-bg); border-radius:var(--radius); padding:28px; width:100%; max-width:380px; box-shadow:0 12px 30px rgba(0,0,0,.25);}
+.login-card .brand{font-size:1.3rem; font-weight:700; text-align:center; margin-bottom:18px; display:flex; align-items:center; justify-content:center; gap:8px; color:var(--primary);}
+.login-tabs{display:flex; gap:6px; margin-bottom:16px;}
+.login-tabs button{flex:1; border-radius:999px;}
+.login-error{font-size:.82rem; color:var(--danger); min-height:18px; margin-top:4px;}
+
+/* Topbar */
+.topbar{
+  background:linear-gradient(135deg,var(--primary) 0%,var(--primary-dark) 100%);
+  color:#fff; padding:14px 18px; border-radius:var(--radius);
+  display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  box-shadow:0 4px 14px rgba(15,35,60,.18);
+}
+.topbar .brand{font-size:1.25rem; font-weight:700; display:flex; align-items:center; gap:8px; margin-right:auto;}
+.topbar .btn-icon-action{
+  background:rgba(255,255,255,.12); color:#fff; border:1px solid rgba(255,255,255,.25);
+}
+.topbar .btn-icon-action:hover{background:rgba(255,255,255,.22); color:#fff;}
+.count-pill{
+  background:rgba(255,255,255,.16); border-radius:999px; padding:2px 12px;
+  font-size:.75rem; font-weight:600; letter-spacing:.02em;
+}
+.station-pill{
+  background:rgba(255,255,255,.14); border-radius:999px; padding:4px 12px;
+  font-size:.78rem; font-weight:600; display:flex; align-items:center; gap:6px;
+}
+.station-pill select{background:transparent;border:none;color:#fff;font-weight:600;font-size:.78rem;}
+.station-pill select option{color:#111;}
+
+/* Stats row */
+.stats-row{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;}
+.stat-chip{
+  flex:1; min-width:100px; background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius-sm);
+  padding:8px 12px; display:flex; flex-direction:column; gap:2px;
+}
+.stat-chip .num{font-size:1.25rem; font-weight:700; font-family:'Poppins',sans-serif;}
+.stat-chip .lbl{font-size:.68rem; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.03em;}
+
+/* Filter chips */
+.filter-row{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;}
+.filter-chip{
+  border:1px solid var(--border); background:var(--card-bg); color:var(--text);
+  border-radius:999px; padding:4px 12px; font-size:.76rem; font-weight:600; cursor:pointer;
+}
+.filter-chip.active{background:var(--primary); border-color:var(--primary); color:#fff;}
+.filter-row select{border-radius:999px; font-size:.76rem; padding:4px 10px; width:auto;}
+
+/* Layout */
+.card{border:1px solid var(--border); border-radius:var(--radius); background:var(--card-bg);}
+.panel{box-shadow:0 2px 10px rgba(20,30,45,.05);}
+#map{height:66vh; border-radius:var(--radius); overflow:hidden; border:1px solid var(--border);}
+#list{max-height:66vh; overflow-y:auto; padding-right:4px;}
+#selectMap{height:500px; border-radius:8px}
+.preview{width:100%; height:170px; object-fit:contain; object-position:center; background:#f0f2f5; border-radius:var(--radius-sm);}
+
+/* Search + add row */
+.search-row{display:flex; gap:8px; align-items:center;}
+.search-row .form-control{border-radius:999px; padding-left:16px;}
+.btn-add{
+  background:var(--accent); border-color:var(--accent); color:#fff; border-radius:999px;
+  font-weight:600; white-space:nowrap; flex-shrink:0;
+  box-shadow:0 3px 8px rgba(233,134,44,.35);
+}
+.btn-add:hover{background:var(--accent-dark); border-color:var(--accent-dark); color:#fff;}
+
+/* View toggle */
+.view-toggle .btn{border-radius:8px !important; margin-left:4px;}
+.view-toggle .btn:first-child{margin-left:0;}
+
+/* Camera card */
+.cam-card{transition:transform .12s ease, box-shadow .12s ease; border-radius:var(--radius); overflow:hidden;}
+.cam-card:hover{transform:translateY(-2px); box-shadow:0 6px 16px rgba(20,30,45,.1);}
+.cam-name{font-weight:600; font-size:1rem;}
+.cam-meta{font-size:.8rem; color:var(--muted); display:flex; align-items:center; gap:4px;}
+.tv-badge{
+  background:var(--accent-soft); color:var(--accent-dark); font-weight:600; font-size:.72rem;
+  padding:2px 9px; border-radius:999px; display:inline-flex; align-items:center; gap:4px;
+}
+body.dark .tv-badge{background:rgba(233,134,44,.18); color:#f0a860;}
+.info-badge{
+  background:#eef1f5; color:var(--muted); font-weight:600; font-size:.72rem;
+  padding:2px 9px; border-radius:999px; display:inline-flex; align-items:center; gap:4px;
+}
+body.dark .info-badge{background:#242a33; color:#b7c0cc;}
+.estado-badge{
+  font-weight:600; font-size:.72rem; padding:2px 9px 2px 7px; border-radius:999px;
+  display:inline-flex; align-items:center; gap:5px;
+}
+.estado-dot{width:8px; height:8px; border-radius:50%; display:inline-block; flex-shrink:0;}
+.cam-card{position:relative; border-left:4px solid var(--border);}
+.badges-row{display:flex; flex-wrap:wrap; gap:5px;}
+.cam-actions .btn{border-radius:8px;}
+.empty-state{text-align:center; padding:40px 12px; color:var(--muted);}
+.empty-state i{font-size:2.4rem; display:block; margin-bottom:8px; opacity:.5;}
+#liveToast.fade{transition-duration:.12s;}
+
+/* Form modal */
+.form-icon-input{position:relative;}
+.form-icon-input i{position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--muted);}
+.form-icon-input input{padding-left:36px;}
+.is-invalid-field{border-color:var(--danger) !important; box-shadow:0 0 0 .2rem rgba(214,69,80,.15);}
+
+/* Stations admin table */
+.station-row{display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--border);}
+.station-row:last-child{border-bottom:none;}
+.station-row .st-name{font-weight:600; flex:1;}
+
+/* Responsive tweaks */
+@media (max-width:991.98px){
+  #map{height:42vh; margin-top:14px;}
+  #list{max-height:48vh;}
+  .topbar{padding:12px;}
+  .topbar .brand{font-size:1.05rem;}
+}
+@media (max-width:575.98px){
+  .container-fluid{padding:10px !important;}
+  .topbar{gap:8px;}
+  .topbar .btn, .topbar .btn-icon-action{padding:6px 10px; font-size:.85rem;}
+  #map{height:38vh;}
+  #list{max-height:44vh;}
+  .search-row{flex-wrap:wrap;}
+  .search-row .form-control{flex:1 1 100%;}
+  .btn-add{flex:1 1 100%; justify-content:center;}
+  .modal-dialog{margin:.5rem;}
+}
+.cam-highlight-pulse{animation:camPulse 1.8s ease-out;}
+.cam-pin-icon{background:transparent !important;border:none !important;}
+@keyframes camPulse{
+ 0%{stroke:#ff6a00 !important;fill:#ff6a00 !important;stroke-opacity:1;fill-opacity:.45;}
+ 40%{stroke:#ff6a00 !important;fill:#ff6a00 !important;stroke-opacity:.9;fill-opacity:.3;}
+ 70%{stroke:#0d6efd !important;fill:#0d6efd !important;stroke-opacity:.5;fill-opacity:.12;}
+ 100%{stroke:#0d6efd !important;fill:#0d6efd !important;stroke-opacity:0;fill-opacity:0;}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen">
+<div class="login-card">
+<div class="brand"><i class="bi bi-camera-video-fill"></i> Sistema de Cámaras</div>
+<input id="loginEmail" type="email" class="form-control mb-2" placeholder="Correo">
+<input id="loginPass" type="password" class="form-control mb-2" placeholder="Contraseña">
+<button class="btn btn-primary w-100" id="loginBtn" onclick="doLogin()">Ingresar</button>
+<div class="login-error" id="loginError"></div>
+</div>
+</div>
+
+<!-- APP SCREEN -->
+<div id="appScreen" class="container-fluid p-3 d-none">
+
+<div class="topbar mb-3">
+<div class="brand"><i class="bi bi-camera-video-fill"></i> Cámaras <span class="count-pill" id="countPill">0</span></div>
+<div class="station-pill" id="stationPillWrap">
+<i class="bi bi-geo"></i> <span id="stationPillLabel"></span>
+</div>
+<button class="btn btn-icon-action btn-sm d-none" id="btnGestionEstaciones" onclick="openStationsAdmin()" title="Gestionar estaciones"><i class="bi bi-buildings"></i> <span class="d-none d-sm-inline">Estaciones</span></button>
+<button class="btn btn-icon-action btn-sm" onclick="toggleTheme()" title="Cambiar tema"><i class="bi bi-moon-stars-fill"></i></button>
+<button class="btn btn-icon-action btn-sm" onclick="exportExcel()" title="Exportar Excel"><i class="bi bi-file-earmark-excel"></i> <span class="d-none d-sm-inline">Excel</span></button>
+<button class="btn btn-icon-action btn-sm" onclick="exportPDF()" title="Exportar PDF"><i class="bi bi-file-earmark-pdf"></i> <span class="d-none d-sm-inline">PDF</span></button>
+<button class="btn btn-icon-action btn-sm" onclick="backup()" title="Backup JSON"><i class="bi bi-download"></i> <span class="d-none d-sm-inline">Backup</span></button>
+<label class="btn btn-icon-action btn-sm mb-0" title="Restaurar backup"><i class="bi bi-upload"></i> <span class="d-none d-sm-inline">Restaurar</span><input hidden type="file" onchange="restore(event)"></label>
+<button class="btn btn-icon-action btn-sm" onclick="logout()" title="Cerrar sesión"><i class="bi bi-box-arrow-right"></i> <span class="d-none d-sm-inline">Salir</span></button>
+</div>
+
+<div class="stats-row" id="statsRow"></div>
+
+<div class="row g-3">
+<div class="col-lg-4">
+<div class="card panel p-3">
+<div class="search-row mb-2">
+<input id="search" class="form-control" placeholder="🔎 Buscar cámara, TV, propietario..." oninput="render()">
+<button class="btn btn-add btn-sm" onclick="openForm()"><i class="bi bi-plus-lg"></i> Nueva</button>
+</div>
+<div class="filter-row" id="filterEstadoRow"></div>
+<div class="filter-row">
+<select id="filterTV" class="form-select form-select-sm" onchange="setFiltroTV(this.value)" style="max-width:180px">
+<option value="">Todos los TV</option>
+</select>
+</div>
+<div class="d-flex justify-content-end mb-2 view-toggle">
+<div class="btn-group" role="group">
+<button class="btn btn-outline-secondary btn-sm active" id="btnLista" onclick="cambiarVista(1)" title="Lista"><i class="bi bi-list-ul"></i></button>
+<button class="btn btn-outline-secondary btn-sm" id="btnGrid" onclick="cambiarVista(2)" title="Cuadrícula"><i class="bi bi-grid-3x2-gap-fill"></i></button>
+</div><input type="hidden" id="viewMode" value="1"></div>
+<div id="list"></div>
+</div>
+</div>
+<div class="col-lg-8">
+<div id="map"></div>
+</div>
+</div>
+</div>
+
+<div class="modal fade" id="camModal">
+<div class="modal-dialog modal-dialog-scrollable">
+<div class="modal-content">
+<div class="modal-header"><h5><i class="bi bi-camera-video-fill me-1"></i>Cámara</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+<div class="modal-body">
+<input id="camId" type="hidden">
+<div class="form-icon-input mb-2"><i class="bi bi-camera-video"></i><input id="nombre" class="form-control" placeholder="Nombre *"></div>
+<div class="form-icon-input mb-2"><i class="bi bi-signpost-split"></i><input id="direccion" class="form-control" placeholder="Dirección"></div>
+<div class="form-icon-input mb-2"><i class="bi bi-people-fill"></i><input id="tv" class="form-control" placeholder="Territorio Vecinal (TV)"></div>
+<div class="row g-2 mb-2">
+<div class="col-6">
+<select id="tipo" class="form-select" onchange="toggleTipoOtro()">
+<option value="">Tipo de cámara</option>
+<option value="Hikvision">Hikvision</option>
+<option value="Dahua">Dahua</option>
+<option value="Imou">Imou</option>
+<option value="Hilook">Hilook</option>
+<option value="Otro">Otro</option>
+</select>
+</div>
+<div class="col-6">
+<select id="cabina" class="form-select">
+<option value="">Cabina</option>
+<option value="Cabina 1">Cabina 1</option>
+<option value="Cabina 2">Cabina 2</option>
+<option value="Cabina 3">Cabina 3</option>
+<option value="Cabina 4">Cabina 4</option>
+</select>
+</div>
+</div>
+<input id="tipoOtro" class="form-control mb-2 d-none" placeholder="Especifique el tipo de cámara" oninput="">
+<select id="estado" class="form-select mb-2">
+<option value="">Estado de la cámara</option>
+<option value="operativa">🟢 Operativa</option>
+<option value="inoperativa">🔴 Inoperativa</option>
+<option value="mantenimiento">🟡 En mantenimiento</option>
+<option value="desconectada">⚫ Desconectada</option>
+</select>
+<div class="row g-2 mb-2">
+<div class="col-6"><input id="lat" class="form-control" placeholder="Latitud *"></div>
+<div class="col-6"><input id="lng" class="form-control" placeholder="Longitud *"></div>
+</div>
+<button class="btn btn-outline-primary w-100 mb-2" onclick="seleccionarMapa()"><i class="bi bi-geo-alt-fill me-1"></i>Seleccionar en mapa</button>
+<div class="form-icon-input mb-2"><i class="bi bi-link-45deg"></i><input id="maps" class="form-control" placeholder="URL Google Maps"></div>
+<div class="form-icon-input mb-2"><i class="bi bi-person-fill"></i><input id="propietario" class="form-control" placeholder="Propietario"></div>
+<div class="form-icon-input mb-2"><i class="bi bi-whatsapp"></i><input id="whatsapp" class="form-control" placeholder="WhatsApp (51999999999)"></div>
+<label class="form-label small text-muted mb-1">Foto de la cámara</label>
+<input id="foto" type="file" class="form-control" accept="image/*">
+<div class="small text-muted mt-2">* Campos obligatorios</div>
+</div>
+<div class="modal-footer">
+<button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+<button class="btn btn-success" id="guardarBtn" onclick="saveCam()"><i class="bi bi-check-lg me-1"></i>Guardar</button>
+</div>
+</div>
+</div>
+</div>
+
+
+<div class="modal fade" id="mapPickerModal">
+<div class="modal-dialog modal-xl modal-fullscreen-sm-down">
+<div class="modal-content">
+<div class="modal-header"><h5>Seleccionar ubicación de la cámara</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+<div class="modal-body">
+<div id="selectMap"></div>
+</div>
+<div class="modal-footer">
+<button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+<button class="btn btn-success" onclick="confirmLocation()">Confirmar ubicación</button>
+</div>
+</div>
+</div>
+</div>
+
+<div class="position-fixed top-0 end-0 p-3" style="z-index:9999">
+<div id="liveToast" class="toast text-bg-success border-0">
+<div class="d-flex">
+<div class="toast-body" id="toastMsg">OK</div>
+<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+</div></div></div>
+
+<div class="modal fade" id="detailsModal"><div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content">
+<div class="modal-header"><h5 class="modal-title"><i class="bi bi-info-circle-fill me-1"></i>Detalles de la cámara</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+<div class="modal-body" id="detailsBody"></div>
+</div></div></div>
+<div class="modal fade" id="deleteModal"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header bg-danger text-white"><h5 class="modal-title">Confirmar eliminación</h5></div><div class="modal-body" id="deleteText"></div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button class="btn btn-danger" id="confirmDeleteBtn">Eliminar</button></div></div></div></div>
+
+<!-- Stations admin modal -->
+<div class="modal fade" id="stationsModal"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content">
+<div class="modal-header"><h5><i class="bi bi-buildings me-1"></i>Gestión de estaciones</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+<div class="modal-body">
+<div id="stationsList"></div>
+<hr>
+<div class="fw-semibold mb-2 small">Vincular estación nueva</div>
+<div class="small text-muted mb-2">1. Crea el usuario en Supabase → Authentication → Add user.<br>2. Copia su UID y pégalo aquí.</div>
+<input id="newStationName" class="form-control mb-2" placeholder="Nombre de la estación">
+<input id="newStationUid" class="form-control mb-2" placeholder="UID del usuario (de Supabase Auth)">
+<button class="btn btn-primary w-100" onclick="addStation()"><i class="bi bi-plus-lg me-1"></i>Vincular estación</button>
+</div>
+<div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button></div>
+</div></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script>
+/* ==================== SUPABASE ==================== */
+const SUPABASE_URL='https://ylweeiytonskodzdkoqa.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlsd2VlaXl0b25za29kemRrb3FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5MjU1NDAsImV4cCI6MjEwMDUwMTU0MH0.RkCvrOR2VHVMERplmTi-BwlwH271X64O05BS4mESAkU';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+
+/* ==================== ESTACIONES / LOGIN ==================== */
+let stations=[];          // estaciones visibles para el usuario logueado (todas si es admin, la suya si es estación)
+let isAdminUser=false;    // true si el usuario logueado está en la tabla admins
+let currentStation=null;  // {id,nombre} de la estación propia (si no es admin)
+let viewingStationId=null;// id de la estación cuyas cámaras se están viendo/editando
+
+async function doLogin(){
+ let email=document.getElementById('loginEmail').value.trim();
+ let pass=document.getElementById('loginPass').value;
+ let err=document.getElementById('loginError');
+ let btn=document.getElementById('loginBtn');
+ err.textContent=''; btn.disabled=true; btn.textContent='Ingresando...';
+ const {data,error}=await sb.auth.signInWithPassword({email,password:pass});
+ btn.disabled=false; btn.textContent='Ingresar';
+ if(error){ err.textContent='Correo o contraseña incorrectos'; return; }
+ let ok=await resolveRole();
+ if(!ok){
+  err.textContent='Esta cuenta no está vinculada a ninguna estación. Contacta al administrador.';
+  await sb.auth.signOut();
+  return;
+ }
+ enterApp();
+}
+
+// Determina si el usuario logueado es admin o a qué estación pertenece
+async function resolveRole(){
+ const {data:{user}}=await sb.auth.getUser();
+ if(!user) return false;
+ let {data:isAdminData}=await sb.rpc('is_admin',{uid:user.id});
+ isAdminUser=!!isAdminData;
+ let {data:allStations}=await sb.from('estaciones').select('*').order('nombre');
+ stations=allStations||[];
+ if(isAdminUser){
+  viewingStationId=stations[0]?stations[0].id:null;
+  return true;
+ }
+ let mine=stations.find(s=>s.user_id===user.id);
+ if(!mine) return false;
+ currentStation=mine;
+ viewingStationId=mine.id;
+ return true;
+}
+
+function logout(){
+ sb.auth.signOut();
+ location.reload();
+}
+
+function currentStationName(){
+ let st=stations.find(s=>s.id===viewingStationId);
+ return st?st.nombre:'—';
+}
+
+function renderStationPill(){
+ let wrap=document.getElementById('stationPillLabel');
+ if(isAdminUser){
+  let opts=stations.map(s=>'<option value="'+s.id+'" '+(s.id===viewingStationId?'selected':'')+'>'+s.nombre+'</option>').join('');
+  wrap.innerHTML='Admin viendo: <select onchange="cambiarEstacionVista(this.value)">'+opts+'</select>';
+  document.getElementById('btnGestionEstaciones').classList.remove('d-none');
+ }else{
+  wrap.textContent=currentStationName();
+  document.getElementById('btnGestionEstaciones').classList.add('d-none');
+ }
+}
+
+async function cambiarEstacionVista(id){
+ viewingStationId=id;
+ filtroEstado=''; filtroTV=''; document.getElementById('search').value='';
+ renderFilterChips(); await loadCams(); populateFilterTV(); render(); renderStats();
+}
+
+function openStationsAdmin(){
+ renderStationsList();
+ new bootstrap.Modal(document.getElementById('stationsModal')).show();
+}
+
+async function renderStationsList(){
+ let el=document.getElementById('stationsList');
+ if(!stations.length){ el.innerHTML='<div class="text-muted small">Aún no hay estaciones vinculadas.</div>'; return; }
+ el.innerHTML='<div class="text-muted small">Cargando...</div>';
+ const {data:allCams}=await sb.from('camaras').select('id,estacion_id');
+ el.innerHTML=stations.map(s=>{
+  let n=(allCams||[]).filter(c=>c.estacion_id===s.id).length;
+  return '<div class="station-row"><div class="st-name">'+s.nombre+'<div class="small text-muted">'+n+' cámara(s)</div></div>'+
+  '<button class="btn btn-sm btn-outline-danger" onclick="deleteStation(\''+s.id+'\')"><i class="bi bi-trash"></i></button></div>';
+ }).join('');
+}
+
+async function addStation(){
+ let nombre=document.getElementById('newStationName').value.trim();
+ let uid=document.getElementById('newStationUid').value.trim();
+ if(!nombre||!uid){ showToast('Complete nombre y UID'); return; }
+ const {error}=await sb.from('estaciones').insert([{nombre,user_id:uid}]);
+ if(error){ showToast('Error: '+error.message); return; }
+ document.getElementById('newStationName').value='';
+ document.getElementById('newStationUid').value='';
+ let {data:allStations}=await sb.from('estaciones').select('*').order('nombre');
+ stations=allStations||[];
+ renderStationsList(); renderStationPill();
+ if(!viewingStationId) viewingStationId=stations[0].id;
+ showToast('Estación vinculada');
+}
+
+async function deleteStation(id){
+ if(!confirm('¿Eliminar esta estación? Sus cámaras también se eliminarán.')) return;
+ const {error}=await sb.from('estaciones').delete().eq('id',id);
+ if(error){ showToast('Error: '+error.message); return; }
+ stations=stations.filter(s=>s.id!==id);
+ if(viewingStationId===id) viewingStationId=stations[0]?stations[0].id:null;
+ renderStationsList(); renderStationPill(); await loadCams(); render(); renderStats();
+}
+
+async function enterApp(){
+ document.getElementById('loginScreen').classList.add('d-none');
+ document.getElementById('appScreen').classList.remove('d-none');
+ renderStationPill();
+ setTimeout(()=>{ map.invalidateSize(); },100);
+ renderFilterChips();
+ await loadCams();
+ populateFilterTV(); render(); renderStats();
+}
+
+async function loadCams(){
+ if(!viewingStationId){ cams=[]; return; }
+ const {data,error}=await sb.from('camaras').select('*').eq('estacion_id',viewingStationId).order('nombre');
+ if(error){ showToast('Error cargando cámaras: '+error.message); cams=[]; return; }
+ cams=data||[];
+}
+
+/* ==================== ESTADO GENERAL ==================== */
+let cams=[];
+const modal=new bootstrap.Modal(document.getElementById('camModal'));
+const map=L.map('map').setView([-8.111,-79.029],12);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+const clusterGroup=L.markerClusterGroup({maxClusterRadius:45});
+map.addLayer(clusterGroup);
+
+let markers=[];let markersById={};let deleteId=null;const toast=new bootstrap.Toast(document.getElementById('liveToast'),{delay:900}); const detailsModal=new bootstrap.Modal(document.getElementById('detailsModal'));const deleteModal=new bootstrap.Modal(document.getElementById('deleteModal'));function showToast(t){toast.hide();toastMsg.textContent=t;toast.show();}
+let selecting=false,tempMarker=null,pickerMap=null,pickerMarker=null,selectedLatLng=null; const pickerModal=new bootstrap.Modal(document.getElementById('mapPickerModal'));
+let filtroEstado='', filtroTV='';
+
+if(localStorage.theme==='dark')document.body.classList.add('dark');
+
+function toggleTheme(){
+ document.body.classList.toggle('dark');
+ localStorage.theme=document.body.classList.contains('dark')?'dark':'light';
+}
+
+function openForm(c=null){
+ camId.value=c?.id||'';
+ nombre.value=c?.nombre||'';
+ direccion.value=c?.direccion||'';
+ tv.value=c?.tv||'';
+ const presetTipos=['Hikvision','Dahua','Imou','Hilook'];
+ if(c && c.tipo && !presetTipos.includes(c.tipo)){
+  tipo.value='Otro'; tipoOtro.value=c.tipo; tipoOtro.classList.remove('d-none');
+ }else{
+  tipo.value=c?.tipo||''; tipoOtro.value=''; tipoOtro.classList.add('d-none');
+ }
+ estado.value=c?.estado||'';
+ cabina.value=c?.cabina||'';
+ lat.value=c?.lat||'';
+ lng.value=c?.lng||'';
+ maps.value=c?.maps||'';
+propietario.value=c?.propietario||'';
+whatsapp.value=c?.whatsapp||'';
+ foto.value='';
+ nombre.classList.remove('is-invalid-field'); lat.classList.remove('is-invalid-field'); lng.classList.remove('is-invalid-field');
+ modal.show();
+}
+
+function toggleTipoOtro(){
+ tipoOtro.classList.toggle('d-none', tipo.value!=='Otro');
+ if(tipo.value!=='Otro') tipoOtro.value='';
+}
+
+function estadoInfo(v){
+ const map={
+  operativa:{label:'Operativa', color:'#22C55E'},
+  inoperativa:{label:'Inoperativa', color:'#EF4444'},
+  mantenimiento:{label:'En mantenimiento', color:'#EAB308'},
+  desconectada:{label:'Desconectada', color:'#6B7280'}
+ };
+ return map[v]||null;
+}
+
+function seleccionarMapa(){
+ modal.hide();
+ pickerModal.show();
+ setTimeout(()=>{
+   if(!pickerMap){
+      pickerMap=L.map('selectMap').setView([-8.111,-79.029],13);
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(pickerMap);
+      pickerMap.on('click',e=>{
+        selectedLatLng=e.latlng;
+        if(pickerMarker) pickerMap.removeLayer(pickerMarker);
+        pickerMarker=L.marker(e.latlng).addTo(pickerMap);
+      });
+   }
+   pickerMap.invalidateSize();
+ if(lat.value&&lng.value){let ll=L.latLng(parseFloat(lat.value),parseFloat(lng.value)); pickerMap.setView(ll,16); if(pickerMarker)pickerMap.removeLayer(pickerMarker); pickerMarker=L.marker(ll).addTo(pickerMap); selectedLatLng=ll;}
+ },300);
+}
+
+function confirmLocation(){
+ if(!selectedLatLng){ alert('Seleccione una ubicación'); return; }
+ lat.value=selectedLatLng.lat.toFixed(6);
+ lng.value=selectedLatLng.lng.toFixed(6);
+ maps.value='https://www.google.com/maps?q='+selectedLatLng.lat+','+selectedLatLng.lng;
+ pickerModal.hide();
+ document.getElementById('mapPickerModal').addEventListener('hidden.bs.modal',()=>modal.show(),{once:true});
+}
+
+map.on('click',e=>{
+ if(!selecting)return;
+ lat.value=e.latlng.lat.toFixed(6);
+ lng.value=e.latlng.lng.toFixed(6);
+ if(tempMarker) map.removeLayer(tempMarker);
+ tempMarker=L.marker(e.latlng).addTo(map);
+ selecting=false;
+});
+
+/* ==================== VALIDACIÓN + GUARDAR ==================== */
+async function saveCam(){
+ if(window.saving)return;
+ nombre.classList.remove('is-invalid-field'); lat.classList.remove('is-invalid-field'); lng.classList.remove('is-invalid-field');
+ let faltantes=[];
+ if(!nombre.value.trim()){ nombre.classList.add('is-invalid-field'); faltantes.push('Nombre'); }
+ if(!lat.value||isNaN(parseFloat(lat.value))){ lat.classList.add('is-invalid-field'); faltantes.push('Latitud'); }
+ if(!lng.value||isNaN(parseFloat(lng.value))){ lng.classList.add('is-invalid-field'); faltantes.push('Longitud'); }
+ if(faltantes.length){ showToast('Falta: '+faltantes.join(', ')); return; }
+ if(!viewingStationId){ showToast('No hay estación seleccionada'); return; }
+
+ window.saving=true; guardarBtn.disabled=true;
+ const persist=async(img)=>{
+  let camData={
+   nombre:nombre.value,
+   direccion:direccion.value,
+   tv:tv.value,
+   tipo:(tipo.value==='Otro'?(tipoOtro.value.trim()||'Otro'):tipo.value),
+   estado:estado.value,
+   cabina:cabina.value,
+   lat:parseFloat(lat.value),
+   lng:parseFloat(lng.value),
+   maps:maps.value,
+   foto:img,
+   propietario:propietario.value,
+   whatsapp:whatsapp.value,
+   estacion_id:viewingStationId
+  };
+  let error, esNuevo=!camId.value;
+  if(!esNuevo){
+   ({error}=await sb.from('camaras').update(camData).eq('id',camId.value));
+  }else{
+   ({error}=await sb.from('camaras').insert(camData));
+  }
+  window.saving=false; guardarBtn.disabled=false;
+  if(error){ showToast('Error al guardar: '+error.message); return; }
+  await loadCams(); populateFilterTV(); render(); renderStats(); modal.hide(); selectedLatLng=null;
+  showToast(esNuevo?'Cámara agregada':'Cámara actualizada');
+ };
+ let f=foto.files[0];
+ if(f){
+  let r=new FileReader();
+  r.onload=e=>persist(e.target.result);
+  r.readAsDataURL(f);
+ }else{
+  let old=cams.find(x=>x.id==camId.value);
+  persist(old?.foto||'');
+ }
+}
+
+function editCam(id){openForm(cams.find(x=>x.id==id));}
+
+function delCam(id){
+ deleteId=id;
+ let c=cams.find(x=>x.id==id);
+ deleteText.innerHTML='¿Está seguro de eliminar la cámara <b>'+(c?.nombre||'')+'</b>?';
+ deleteModal.show();
+}
+document.addEventListener('DOMContentLoaded',()=>{confirmDeleteBtn.onclick=async()=>{
+ const {error}=await sb.from('camaras').delete().eq('id',deleteId);
+ if(error){ showToast('Error al eliminar: '+error.message); deleteModal.hide(); return; }
+ await loadCams(); populateFilterTV(); render(); renderStats(); deleteModal.hide();
+ showToast('Cámara eliminada');
+};});
+
+/* ==================== UBICAR EN MAPA (con clustering) ==================== */
+function focusCam(id){
+ let c=cams.find(x=>x.id==id);
+ if(!c||!c.lat||!c.lng) return;
+ let mk=markersById[id];
+ if(!mk) return;
+ map.closePopup();
+ clusterGroup.zoomToShowLayer(mk,()=>{
+  mk.openPopup();
+  highlightMarker([c.lat,c.lng]);
+ });
+}
+
+let highlightCircle=null;
+function highlightMarker(latlng){
+ if(highlightCircle) map.removeLayer(highlightCircle);
+ highlightCircle=L.circleMarker(latlng,{radius:14,color:'#ff6a00',weight:3,fillColor:'#ff6a00',fillOpacity:0.45,className:'cam-highlight-pulse'}).addTo(map);
+ setTimeout(()=>{ if(highlightCircle){map.removeLayer(highlightCircle);highlightCircle=null;} },1800);
+}
+
+/* ==================== CÓMO LLEGAR ==================== */
+function comoLlegar(id){
+ let c=cams.find(x=>x.id==id);
+ if(!c||!c.lat||!c.lng){ showToast('Esta cámara no tiene coordenadas'); return; }
+ const abrir=(origin)=>{
+  let url='https://www.google.com/maps/dir/?api=1'+(origin?'&origin='+origin:'')+'&destination='+c.lat+','+c.lng;
+  window.open(url,'_blank');
+ };
+ if(!navigator.geolocation){ abrir(''); return; }
+ navigator.geolocation.getCurrentPosition(
+  pos=>abrir(pos.coords.latitude+','+pos.coords.longitude),
+  ()=>abrir('')
+ );
+}
+
+function cambiarVista(vista){
+document.getElementById('viewMode').value=String(vista);
+document.getElementById('btnLista').classList.toggle('active',vista==1);
+document.getElementById('btnGrid').classList.toggle('active',vista==2);
+render();
+}
+
+function camIcon(color){
+ color=color||'#3b82f6';
+ return L.divIcon({
+  className:'cam-pin-icon',
+  html:'<svg width="26" height="34" viewBox="0 0 26 34" xmlns="http://www.w3.org/2000/svg"><path d="M13 0C5.8 0 0 5.8 0 13c0 9.5 13 21 13 21s13-11.5 13-21C26 5.8 20.2 0 13 0z" fill="'+color+'" stroke="#fff" stroke-width="1.5"/><circle cx="13" cy="13" r="5" fill="#fff"/></svg>',
+  iconSize:[26,34],
+  iconAnchor:[13,34],
+  popupAnchor:[0,-30]
+ });
+}
+
+/* ==================== FILTROS ==================== */
+function setFiltroEstado(v){ filtroEstado=v; renderFilterChips(); render(); }
+function setFiltroTV(v){ filtroTV=v; render(); }
+
+function renderFilterChips(){
+ const opciones=[['','Todas'],['operativa','🟢 Operativa'],['inoperativa','🔴 Inoperativa'],['mantenimiento','🟡 Mantenimiento'],['desconectada','⚫ Desconectada']];
+ document.getElementById('filterEstadoRow').innerHTML=opciones.map(o=>
+  '<button class="filter-chip '+(filtroEstado===o[0]?'active':'')+'" onclick="setFiltroEstado(\''+o[0]+'\')">'+o[1]+'</button>'
+ ).join('');
+}
+
+function populateFilterTV(){
+ let tvs=[...new Set(cams.map(c=>c.tv).filter(Boolean))].sort();
+ let sel=document.getElementById('filterTV');
+ let current=filtroTV;
+ sel.innerHTML='<option value="">Todos los TV</option>'+tvs.map(t=>'<option value="'+t+'">'+t+'</option>').join('');
+ sel.value=tvs.includes(current)?current:'';
+ filtroTV=sel.value;
+}
+
+/* ==================== ESTADÍSTICAS ==================== */
+function renderStats(){
+ let propias=cams;
+ const estados=[['operativa','Operativas','#22C55E'],['inoperativa','Inoperativas','#EF4444'],['mantenimiento','Mantenimiento','#EAB308'],['desconectada','Desconectadas','#6B7280']];
+ let html='<div class="stat-chip"><span class="num">'+propias.length+'</span><span class="lbl">Total</span></div>';
+ estados.forEach(e=>{
+  let n=propias.filter(c=>c.estado===e[0]).length;
+  html+='<div class="stat-chip" style="border-left:3px solid '+e[2]+'"><span class="num" style="color:'+e[2]+'">'+n+'</span><span class="lbl">'+e[1]+'</span></div>';
+ });
+ document.getElementById('statsRow').innerHTML=html;
+}
+
+/* ==================== RENDER PRINCIPAL ==================== */
+function render(){
+ clusterGroup.clearLayers();
+ markers=[];
+ markersById={};
+ let q=document.getElementById('search').value.toLowerCase();
+ let propias=cams;
+ document.getElementById('countPill').textContent=propias.length;
+ let data=propias.filter(c=>
+  JSON.stringify(c).toLowerCase().includes(q) &&
+  (filtroEstado===''||c.estado===filtroEstado) &&
+  (filtroTV===''||c.tv===filtroTV)
+ );
+ list.className=(document.getElementById('viewMode')&&document.getElementById('viewMode').value==='2')?'row g-2':'';
+ list.innerHTML='';
+ if(!data.length){
+  list.innerHTML='<div class="empty-state"><i class="bi bi-camera-video-off"></i>'+(propias.length?'No se encontraron cámaras con esos filtros':'Aún no hay cámaras registradas en esta estación')+'</div>';
+ }
+ data.forEach(c=>{
+  let d=document.createElement('div');
+  d.className=(document.getElementById('viewMode')&&document.getElementById('viewMode').value==='2')?'col-md-6':'w-100'; let inner=document.createElement('div'); inner.className='card cam-card p-2 h-100 mb-2';
+  let ei=estadoInfo(c.estado);
+  if(ei) inner.style.borderLeftColor=ei.color;
+  inner.innerHTML=`${c.foto?'<img class="preview mb-2" src="'+c.foto+'">':''}
+<div class="cam-name">${c.nombre||''}</div>
+${c.direccion?'<div class="cam-meta"><i class="bi bi-signpost-split"></i>'+c.direccion+'</div>':''}
+<div class="mt-1 badges-row">
+${c.tv?'<span class="tv-badge"><i class="bi bi-people-fill"></i>TV '+c.tv+'</span>':''}
+${ei?'<span class="estado-badge" style="background:'+ei.color+'22;color:'+ei.color+'"><span class="estado-dot" style="background:'+ei.color+'"></span>'+ei.label+'</span>':''}
+${c.tipo?'<span class="info-badge"><i class="bi bi-camera-video"></i>'+c.tipo+'</span>':''}
+${c.cabina?'<span class="info-badge"><i class="bi bi-pc-display"></i>'+c.cabina+'</span>':''}
+</div>
+<div class="mt-2 cam-actions">
+<button class="btn btn-sm btn-primary" onclick="focusCam('${c.id}')" title="Ver en mapa"><i class="bi bi-geo-alt-fill"></i></button>
+<button class="btn btn-sm btn-outline-primary" onclick="comoLlegar('${c.id}')" title="Cómo llegar"><i class="bi bi-signpost-2-fill"></i></button>
+<button class="btn btn-sm btn-info text-white" onclick="viewDetails('${c.id}')" title="Detalles"><i class="bi bi-eye-fill"></i></button>
+<a class="btn btn-sm btn-success" target="_blank" href="https://wa.me/${c.whatsapp||''}" title="WhatsApp"><i class="bi bi-whatsapp"></i></a>
+<button class="btn btn-sm btn-warning" onclick="editCam('${c.id}')" title="Editar"><i class="bi bi-pencil-square"></i></button>
+<button class="btn btn-sm btn-danger" onclick="delCam('${c.id}')" title="Eliminar"><i class="bi bi-trash-fill"></i></button>
+</div>`;
+  d.appendChild(inner); list.appendChild(d);
+
+  if(c.lat&&c.lng){
+   let eiMarker=estadoInfo(c.estado);
+   let mk=L.marker([c.lat,c.lng],{icon:camIcon(eiMarker?eiMarker.color:null)}).bindPopup(
+(()=>{let ei2=estadoInfo(c.estado);return '<b>'+c.nombre+'</b>'+(c.tv?' <span style="color:#e9862c;font-size:.8em">(TV '+c.tv+')</span>':'')+
+(ei2?' <span style="color:'+ei2.color+';font-size:.8em">● '+ei2.label+'</span>':'')+'<br>'+c.direccion+
+(c.tipo||c.cabina?'<br><small>'+(c.tipo||'')+(c.tipo&&c.cabina?' · ':'')+(c.cabina||'')+'</small>':'')+
+(c.foto?'<br><img src="'+c.foto+'" style="max-width:180px;max-height:120px;object-fit:contain">':'')+
+'<br><a target="_blank" href="'+(c.maps||'#')+'">Abrir Google Maps</a>';})()
+);
+   clusterGroup.addLayer(mk);
+   markers.push(mk);
+   markersById[c.id]=mk;
+  }
+ });
+}
+
+
+function viewDetails(id){
+ let c=cams.find(x=>x.id==id); if(!c)return;
+ let ei=estadoInfo(c.estado);
+ detailsBody.innerHTML=`
+ ${c.foto?'<img src="'+c.foto+'" class="img-fluid rounded mb-3" style="max-height:300px;display:block;margin:auto;">':''}
+ <table class="table">
+ <tr><th>Nombre</th><td>${c.nombre||''}</td></tr>
+ <tr><th>Dirección</th><td>${c.direccion||''}</td></tr>
+ <tr><th>Territorio Vecinal (TV)</th><td>${c.tv||''}</td></tr>
+ <tr><th>Tipo de cámara</th><td>${c.tipo||''}</td></tr>
+ <tr><th>Estado</th><td>${ei?'<span class="estado-badge" style="background:'+ei.color+'22;color:'+ei.color+'"><span class="estado-dot" style="background:'+ei.color+'"></span>'+ei.label+'</span>':''}</td></tr>
+ <tr><th>Cabina</th><td>${c.cabina||''}</td></tr>
+ <tr><th>Latitud</th><td>${c.lat||''}</td></tr>
+ <tr><th>Longitud</th><td>${c.lng||''}</td></tr>
+ <tr><th>Propietario</th><td>${c.propietario||''}</td></tr>
+ <tr><th>WhatsApp</th><td>${c.whatsapp||''}</td></tr>
+ </table>
+ <div class="d-flex gap-2 flex-wrap">
+<a class="btn btn-success" target="_blank" href="https://wa.me/${c.whatsapp||''}"><i class="bi bi-whatsapp me-1"></i>Abrir WhatsApp</a>
+<a class="btn btn-primary" target="_blank" href="${c.maps||'#'}"><i class="bi bi-geo-alt-fill me-1"></i>Abrir Google Maps</a>
+<button class="btn btn-outline-primary" onclick="comoLlegar('${c.id}')"><i class="bi bi-signpost-2-fill me-1"></i>Cómo llegar</button>
+</div>
+ `;
+ detailsModal.show();
+}
+
+/* ==================== BACKUP / RESTORE ==================== */
+function backup(){
+ let blob=new Blob([JSON.stringify({cams,stations},null,2)],{type:'application/json'});
+ let a=document.createElement('a');
+ a.href=URL.createObjectURL(blob);
+ a.download='atlas_backup.json';
+ a.click();
+}
+
+async function restore(e){
+ let f=e.target.files[0];
+ let r=new FileReader();
+ r.onload=async x=>{
+  let data=JSON.parse(x.target.result);
+  let items=Array.isArray(data)?data:(data.cams||[]);
+  if(!items.length){ showToast('El archivo no tiene cámaras'); return; }
+  if(!viewingStationId){ showToast('Selecciona una estación primero'); return; }
+  if(!confirm('Esto va a agregar '+items.length+' cámara(s) a "'+currentStationName()+'". ¿Continuar?')) return;
+  let rows=items.map(c=>({
+   nombre:c.nombre||'', direccion:c.direccion||'', tv:c.tv||'', tipo:c.tipo||'',
+   estado:c.estado||'', cabina:c.cabina||'',
+   lat:c.lat?parseFloat(c.lat):null, lng:c.lng?parseFloat(c.lng):null,
+   maps:c.maps||'', foto:c.foto||'', propietario:c.propietario||'', whatsapp:c.whatsapp||'',
+   estacion_id:viewingStationId
+  }));
+  const {error}=await sb.from('camaras').insert(rows);
+  if(error){ showToast('Error al restaurar: '+error.message); return; }
+  await loadCams(); populateFilterTV(); render(); renderStats();
+  showToast('Datos restaurados');
+ };
+ r.readAsText(f);
+ e.target.value='';
+}
+
+/* ==================== EXPORTACIÓN ==================== */
+function datosExport(){
+ return cams.map(c=>({
+  Nombre:c.nombre||'', Direccion:c.direccion||'', TV:c.tv||'', Tipo:c.tipo||'',
+  Estado:estadoInfo(c.estado)?.label||'', Cabina:c.cabina||'',
+  Latitud:c.lat||'', Longitud:c.lng||'', Propietario:c.propietario||'', WhatsApp:c.whatsapp||''
+ }));
+}
+
+function exportExcel(){
+ let data=datosExport();
+ if(!data.length){ showToast('No hay cámaras para exportar'); return; }
+ let ws=XLSX.utils.json_to_sheet(data);
+ let wb=XLSX.utils.book_new();
+ XLSX.utils.book_append_sheet(wb,ws,'Camaras');
+ XLSX.writeFile(wb,'camaras_'+currentStationName().replace(/\s+/g,'_')+'.xlsx');
+}
+
+function exportPDF(){
+ let data=datosExport();
+ if(!data.length){ showToast('No hay cámaras para exportar'); return; }
+ const {jsPDF}=window.jspdf;
+ let doc=new jsPDF();
+ doc.setFontSize(14);
+ doc.text('Reporte de cámaras - '+currentStationName(),14,15);
+ doc.setFontSize(9);
+ doc.text(new Date().toLocaleDateString(),14,21);
+ doc.autoTable({
+  startY:26,
+  head:[['Nombre','Dirección','TV','Estado','Tipo','Cabina']],
+  body:data.map(d=>[d.Nombre,d.Direccion,d.TV,d.Estado,d.Tipo,d.Cabina]),
+  styles:{fontSize:8}
+ });
+ doc.save('camaras_'+currentStationName().replace(/\s+/g,'_')+'.pdf');
+}
+
+/* ==================== INICIO ==================== */
+(async function init(){
+ const {data:{session}}=await sb.auth.getSession();
+ if(session){
+  let ok=await resolveRole();
+  if(ok){ enterApp(); }
+  else{
+   document.getElementById('loginError').textContent='Esta cuenta no está vinculada a ninguna estación. Contacta al administrador.';
+   await sb.auth.signOut();
+  }
+ }
+})();
+</script>
+</body>
+</html>
