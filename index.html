@@ -202,8 +202,6 @@ body.dark .info-badge{background:#242a33; color:#b7c0cc;}
 <button class="btn btn-icon-action btn-sm" onclick="toggleTheme()" title="Cambiar tema"><i class="bi bi-moon-stars-fill"></i></button>
 <button class="btn btn-icon-action btn-sm" onclick="exportExcel()" title="Exportar Excel"><i class="bi bi-file-earmark-excel"></i> <span class="d-none d-sm-inline">Excel</span></button>
 <button class="btn btn-icon-action btn-sm" onclick="exportPDF()" title="Exportar PDF"><i class="bi bi-file-earmark-pdf"></i> <span class="d-none d-sm-inline">PDF</span></button>
-<button class="btn btn-icon-action btn-sm" onclick="backup()" title="Backup JSON"><i class="bi bi-download"></i> <span class="d-none d-sm-inline">Backup</span></button>
-<label class="btn btn-icon-action btn-sm mb-0" title="Restaurar backup"><i class="bi bi-upload"></i> <span class="d-none d-sm-inline">Restaurar</span><input hidden type="file" onchange="restore(event)"></label>
 <button class="btn btn-icon-action btn-sm" onclick="logout()" title="Cerrar sesión"><i class="bi bi-box-arrow-right"></i> <span class="d-none d-sm-inline">Salir</span></button>
 </div>
 
@@ -806,40 +804,6 @@ function viewDetails(id){
 </div>
  `;
  detailsModal.show();
-}
-
-/* ==================== BACKUP / RESTORE ==================== */
-function backup(){
- let blob=new Blob([JSON.stringify({cams,stations},null,2)],{type:'application/json'});
- let a=document.createElement('a');
- a.href=URL.createObjectURL(blob);
- a.download='atlas_backup.json';
- a.click();
-}
-
-async function restore(e){
- let f=e.target.files[0];
- let r=new FileReader();
- r.onload=async x=>{
-  let data=JSON.parse(x.target.result);
-  let items=Array.isArray(data)?data:(data.cams||[]);
-  if(!items.length){ showToast('El archivo no tiene cámaras'); return; }
-  if(!viewingStationId){ showToast('Selecciona una estación primero'); return; }
-  if(!confirm('Esto va a agregar '+items.length+' cámara(s) a "'+currentStationName()+'". ¿Continuar?')) return;
-  let rows=items.map(c=>({
-   nombre:c.nombre||'', direccion:c.direccion||'', tv:c.tv||'', tipo:c.tipo||'',
-   estado:c.estado||'', cabina:c.cabina||'',
-   lat:c.lat?parseFloat(c.lat):null, lng:c.lng?parseFloat(c.lng):null,
-   maps:c.maps||'', foto:c.foto||'', propietario:c.propietario||'', whatsapp:c.whatsapp||'',
-   estacion_id:viewingStationId
-  }));
-  const {error}=await sb.from('camaras').insert(rows);
-  if(error){ showToast('Error al restaurar: '+error.message); return; }
-  await loadCams(); populateFilterTV(); render(); renderStats();
-  showToast('Datos restaurados');
- };
- r.readAsText(f);
- e.target.value='';
 }
 
 /* ==================== EXPORTACIÓN ==================== */
