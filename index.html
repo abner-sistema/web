@@ -433,32 +433,49 @@ async function renderStationsList(){
  el.innerHTML=stations.map(s=>{
   let n=(allCams||[]).filter(c=>c.estacion_id===s.id).length;
   return '<div class="station-row"><div class="st-name">'+s.nombre+'<div class="small text-muted">'+n+' cámara(s)</div></div>'+
+  '<button class="btn btn-sm btn-outline-secondary me-1" onclick="editStation(\''+s.id+'\')"><i class="bi bi-pencil"></i></button>'+
   '<button class="btn btn-sm btn-outline-danger" onclick="deleteStation(\''+s.id+'\')"><i class="bi bi-trash"></i></button></div>';
  }).join('');
+}
+
+async function editStation(id){
+ let s=stations.find(x=>x.id===id);
+ if(!s) return;
+ let nuevoNombre=prompt('Nuevo nombre para esta estación:',s.nombre);
+ if(nuevoNombre===null) return; // canceló
+ nuevoNombre=nuevoNombre.trim();
+ if(!nuevoNombre){ alert('El nombre no puede quedar vacío.'); return; }
+ const {error}=await sb.from('estaciones').update({nombre:nuevoNombre}).eq('id',id);
+ if(error){ alert('Error al actualizar: '+error.message); return; }
+ let {data:allStations}=await sb.from('estaciones').select('*').order('nombre');
+ stations=allStations||[];
+ renderStationsList(); renderStationPill();
+ alert('Estación actualizada correctamente.');
 }
 
 async function addStation(){
  let nombre=document.getElementById('newStationName').value.trim();
  let uid=document.getElementById('newStationUid').value.trim();
- if(!nombre||!uid){ showToast('Complete nombre y UID'); return; }
+ if(!nombre||!uid){ alert('Completa el nombre y el UID.'); return; }
  const {error}=await sb.from('estaciones').insert([{nombre,user_id:uid}]);
- if(error){ showToast('Error: '+error.message); return; }
+ if(error){ alert('Error: '+error.message); return; }
  document.getElementById('newStationName').value='';
  document.getElementById('newStationUid').value='';
  let {data:allStations}=await sb.from('estaciones').select('*').order('nombre');
  stations=allStations||[];
  renderStationsList(); renderStationPill();
  if(!viewingStationId) viewingStationId=stations[0].id;
- showToast('Estación vinculada');
+ alert('Estación vinculada correctamente.');
 }
 
 async function deleteStation(id){
  if(!confirm('¿Eliminar esta estación? Sus cámaras también se eliminarán.')) return;
  const {error}=await sb.from('estaciones').delete().eq('id',id);
- if(error){ showToast('Error: '+error.message); return; }
+ if(error){ alert('Error: '+error.message); return; }
  stations=stations.filter(s=>s.id!==id);
  if(viewingStationId===id) viewingStationId=stations[0]?stations[0].id:null;
  renderStationsList(); renderStationPill(); await loadCams(); render(); renderStats();
+ alert('Estación eliminada.');
 }
 
 async function enterApp(){
