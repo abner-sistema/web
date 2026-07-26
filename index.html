@@ -241,12 +241,12 @@ body.dark .info-badge{background:#242a33; color:#b7c0cc;}
 <div class="modal-body">
 <input id="camId" type="hidden">
 <div class="form-icon-input mb-2"><i class="bi bi-camera-video"></i><input id="nombre" class="form-control" placeholder="Nombre *"></div>
-<div class="form-icon-input mb-2"><i class="bi bi-signpost-split"></i><input id="direccion" class="form-control" placeholder="Dirección"></div>
-<div class="form-icon-input mb-2"><i class="bi bi-people-fill"></i><input id="tv" class="form-control" placeholder="Territorio Vecinal (TV)"></div>
+<div class="form-icon-input mb-2"><i class="bi bi-signpost-split"></i><input id="direccion" class="form-control" placeholder="Dirección *"></div>
+<div class="form-icon-input mb-2"><i class="bi bi-people-fill"></i><input id="tv" class="form-control" placeholder="Territorio Vecinal (TV) *"></div>
 <div class="row g-2 mb-2">
 <div class="col-6">
 <select id="tipo" class="form-select" onchange="toggleTipoOtro()">
-<option value="">Tipo de cámara</option>
+<option value="">Tipo de cámara *</option>
 <option value="Hikvision">Hikvision</option>
 <option value="Dahua">Dahua</option>
 <option value="Imou">Imou</option>
@@ -256,7 +256,7 @@ body.dark .info-badge{background:#242a33; color:#b7c0cc;}
 </div>
 <div class="col-6">
 <select id="cabina" class="form-select">
-<option value="">Cabina</option>
+<option value="">Cabina *</option>
 <option value="Cabina 1">Cabina 1</option>
 <option value="Cabina 2">Cabina 2</option>
 <option value="Cabina 3">Cabina 3</option>
@@ -266,7 +266,7 @@ body.dark .info-badge{background:#242a33; color:#b7c0cc;}
 </div>
 <input id="tipoOtro" class="form-control mb-2 d-none" placeholder="Especifique el tipo de cámara" oninput="">
 <select id="estado" class="form-select mb-2">
-<option value="">Estado de la cámara</option>
+<option value="">Estado de la cámara *</option>
 <option value="operativa">🟢 Operativa</option>
 <option value="inoperativa">🔴 Inoperativa</option>
 <option value="mantenimiento">🟡 En mantenimiento</option>
@@ -276,12 +276,13 @@ body.dark .info-badge{background:#242a33; color:#b7c0cc;}
 <div class="col-6"><input id="lat" class="form-control" placeholder="Latitud *"></div>
 <div class="col-6"><input id="lng" class="form-control" placeholder="Longitud *"></div>
 </div>
-<button class="btn btn-outline-primary w-100 mb-2" onclick="seleccionarMapa()"><i class="bi bi-geo-alt-fill me-1"></i>Seleccionar en mapa</button>
+<button class="btn btn-outline-primary w-100 mb-2" id="btnSeleccionarMapa" onclick="seleccionarMapa()"><i class="bi bi-geo-alt-fill me-1"></i>Seleccionar en mapa *</button>
 <div class="form-icon-input mb-2"><i class="bi bi-link-45deg"></i><input id="maps" class="form-control" placeholder="URL Google Maps"></div>
-<div class="form-icon-input mb-2"><i class="bi bi-person-fill"></i><input id="propietario" class="form-control" placeholder="Propietario"></div>
+<div class="form-icon-input mb-2"><i class="bi bi-person-fill"></i><input id="propietario" class="form-control" placeholder="Propietario *"></div>
 <div class="form-icon-input mb-2"><i class="bi bi-whatsapp"></i><input id="whatsapp" class="form-control" placeholder="WhatsApp (51999999999)"></div>
-<label class="form-label small text-muted mb-1">Foto de la cámara</label>
+<label class="form-label small text-muted mb-1">Foto de la cámara *</label>
 <input id="foto" type="file" class="form-control" accept="image/*">
+<div id="fotoActualNota" class="small text-muted mt-1 d-none">Ya tiene una foto guardada. Solo sube una nueva si quieres reemplazarla.</div>
 <div class="small text-muted mt-2">* Campos obligatorios</div>
 </div>
 <div class="modal-footer">
@@ -533,7 +534,9 @@ function openForm(c=null){
 propietario.value=c?.propietario||'';
 whatsapp.value=c?.whatsapp||'';
  foto.value='';
- nombre.classList.remove('is-invalid-field'); lat.classList.remove('is-invalid-field'); lng.classList.remove('is-invalid-field');
+ document.getElementById('fotoActualNota').classList.toggle('d-none', !(c && c.foto));
+ [nombre,direccion,tv,tipo,cabina,estado,lat,lng,propietario].forEach(el=>el.classList.remove('is-invalid-field'));
+ document.getElementById('btnSeleccionarMapa').classList.remove('is-invalid-field');
  modal.show();
 }
 
@@ -591,11 +594,21 @@ map.on('click',e=>{
 /* ==================== VALIDACIÓN + GUARDAR ==================== */
 async function saveCam(){
  if(window.saving)return;
- nombre.classList.remove('is-invalid-field'); lat.classList.remove('is-invalid-field'); lng.classList.remove('is-invalid-field');
+ [nombre,direccion,tv,tipo,cabina,estado,lat,lng,propietario].forEach(el=>el.classList.remove('is-invalid-field'));
+ document.getElementById('btnSeleccionarMapa').classList.remove('is-invalid-field');
  let faltantes=[];
  if(!nombre.value.trim()){ nombre.classList.add('is-invalid-field'); faltantes.push('Nombre'); }
- if(!lat.value||isNaN(parseFloat(lat.value))){ lat.classList.add('is-invalid-field'); faltantes.push('Latitud'); }
- if(!lng.value||isNaN(parseFloat(lng.value))){ lng.classList.add('is-invalid-field'); faltantes.push('Longitud'); }
+ if(!direccion.value.trim()){ direccion.classList.add('is-invalid-field'); faltantes.push('Dirección'); }
+ if(!tv.value.trim()){ tv.classList.add('is-invalid-field'); faltantes.push('Territorio Vecinal'); }
+ if(!tipo.value){ tipo.classList.add('is-invalid-field'); faltantes.push('Tipo de cámara'); }
+ else if(tipo.value==='Otro' && !tipoOtro.value.trim()){ tipoOtro.classList.add('is-invalid-field'); faltantes.push('Tipo de cámara (especificar)'); }
+ if(!cabina.value){ cabina.classList.add('is-invalid-field'); faltantes.push('Cabina'); }
+ if(!estado.value){ estado.classList.add('is-invalid-field'); faltantes.push('Estado de la cámara'); }
+ if(!lat.value||isNaN(parseFloat(lat.value))){ lat.classList.add('is-invalid-field'); document.getElementById('btnSeleccionarMapa').classList.add('is-invalid-field'); faltantes.push('Ubicación en el mapa'); }
+ if(!lng.value||isNaN(parseFloat(lng.value))){ lng.classList.add('is-invalid-field'); document.getElementById('btnSeleccionarMapa').classList.add('is-invalid-field'); }
+ if(!propietario.value.trim()){ propietario.classList.add('is-invalid-field'); faltantes.push('Propietario'); }
+ let tieneFotoActual=!!(cams.find(x=>x.id==camId.value)?.foto);
+ if(!foto.files[0] && !tieneFotoActual){ faltantes.push('Foto de la cámara'); }
  if(faltantes.length){ showToast('Falta: '+faltantes.join(', ')); return; }
  if(!viewingStationId){ showToast('No hay estación seleccionada'); return; }
 
@@ -629,13 +642,32 @@ async function saveCam(){
  };
  let f=foto.files[0];
  if(f){
-  let r=new FileReader();
-  r.onload=e=>persist(e.target.result);
-  r.readAsDataURL(f);
+  let dataUrl=await comprimirImagen(f);
+  persist(dataUrl);
  }else{
   let old=cams.find(x=>x.id==camId.value);
   persist(old?.foto||'');
  }
+}
+
+function comprimirImagen(file,maxWidth=900,calidad=0.75){
+ return new Promise((resolve)=>{
+  let reader=new FileReader();
+  reader.onload=e=>{
+   let img=new Image();
+   img.onload=()=>{
+    let scale=Math.min(1,maxWidth/img.width);
+    let w=Math.round(img.width*scale), h=Math.round(img.height*scale);
+    let canvas=document.createElement('canvas');
+    canvas.width=w; canvas.height=h;
+    canvas.getContext('2d').drawImage(img,0,0,w,h);
+    resolve(canvas.toDataURL('image/jpeg',calidad));
+   };
+   img.onerror=()=>resolve(e.target.result); // si falla el procesamiento, se sube tal cual
+   img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+ });
 }
 
 function editCam(id){openForm(cams.find(x=>x.id==id));}
