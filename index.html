@@ -202,6 +202,8 @@ body.dark .info-badge{background:#242a33; color:#b7c0cc;}
 <button class="btn btn-icon-action btn-sm" onclick="toggleTheme()" title="Cambiar tema"><i class="bi bi-moon-stars-fill"></i></button>
 <button class="btn btn-icon-action btn-sm" onclick="exportExcel()" title="Exportar Excel"><i class="bi bi-file-earmark-excel"></i> <span class="d-none d-sm-inline">Excel</span></button>
 <button class="btn btn-icon-action btn-sm" onclick="exportPDF()" title="Exportar PDF"><i class="bi bi-file-earmark-pdf"></i> <span class="d-none d-sm-inline">PDF</span></button>
+<button class="btn btn-icon-action btn-sm" onclick="abrirReporte()" title="Reporte de texto"><i class="bi bi-chat-square-text"></i> <span class="d-none d-sm-inline">Reporte</span></button>
+<button class="btn btn-icon-action btn-sm" onclick="openTerritoriosAdmin()" title="Gestionar territorios"><i class="bi bi-geo"></i> <span class="d-none d-sm-inline">Territorios</span></button>
 <button class="btn btn-icon-action btn-sm" onclick="logout()" title="Cerrar sesión"><i class="bi bi-box-arrow-right"></i> <span class="d-none d-sm-inline">Salir</span></button>
 </div>
 
@@ -242,7 +244,7 @@ body.dark .info-badge{background:#242a33; color:#b7c0cc;}
 <input id="camId" type="hidden">
 <div class="form-icon-input mb-2"><i class="bi bi-camera-video"></i><input id="nombre" class="form-control" placeholder="Nombre *"></div>
 <div class="form-icon-input mb-2"><i class="bi bi-signpost-split"></i><input id="direccion" class="form-control" placeholder="Dirección *"></div>
-<div class="form-icon-input mb-2"><i class="bi bi-people-fill"></i><input id="tv" class="form-control" placeholder="Territorio Vecinal (TV) *"></div>
+<div class="form-icon-input mb-2"><i class="bi bi-people-fill"></i><select id="tv" class="form-select ps-4" onchange="onCambioTerritorio()"><option value="">Territorio Vecinal (TV) *</option></select></div>
 <div class="row g-2 mb-2">
 <div class="col-6">
 <select id="tipo" class="form-select" onchange="toggleTipoOtro()">
@@ -323,6 +325,29 @@ body.dark .info-badge{background:#242a33; color:#b7c0cc;}
 <div class="modal fade" id="deleteModal"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header bg-danger text-white"><h5 class="modal-title">Confirmar eliminación</h5></div><div class="modal-body" id="deleteText"></div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button class="btn btn-danger" id="confirmDeleteBtn">Eliminar</button></div></div></div></div>
 
 <!-- Stations admin modal -->
+<div class="modal fade" id="territoriosModal"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content">
+<div class="modal-header"><h5><i class="bi bi-geo me-1"></i>Mis territorios (TV)</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+<div class="modal-body">
+<div id="territoriosList"></div>
+<hr>
+<div class="fw-semibold mb-2 small">Nuevo territorio</div>
+<input id="newTerritorioName" class="form-control mb-2" placeholder="Ej. TV-54 (Trupal-Capullanas)">
+<button class="btn btn-primary w-100" onclick="addTerritorio()"><i class="bi bi-plus-lg me-1"></i>Agregar territorio</button>
+</div>
+<div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button></div>
+</div></div></div>
+
+<div class="modal fade" id="reporteModal"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content">
+<div class="modal-header"><h5><i class="bi bi-chat-square-text me-1"></i>Reporte de texto</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+<div class="modal-body">
+<textarea id="reporteTexto" class="form-control" rows="16" readonly style="font-family:monospace;font-size:.85rem;"></textarea>
+</div>
+<div class="modal-footer">
+<button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+<button class="btn btn-success" onclick="copiarReporte()"><i class="bi bi-clipboard-check me-1"></i>Copiar texto</button>
+</div>
+</div></div></div>
+
 <div class="modal fade" id="stationsModal"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content">
 <div class="modal-header"><h5><i class="bi bi-buildings me-1"></i>Gestión de estaciones</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
 <div class="modal-body">
@@ -418,7 +443,7 @@ function renderStationPill(){
 async function cambiarEstacionVista(id){
  viewingStationId=id;
  filtroEstado=''; filtroTV=''; document.getElementById('search').value='';
- renderFilterChips(); await loadCams(); populateFilterTV(); render(); renderStats();
+ renderFilterChips(); await loadTerritorios(); await loadCams(); populateFilterTV(); render(); renderStats();
 }
 
 function openStationsAdmin(){
@@ -485,6 +510,7 @@ async function enterApp(){
  renderStationPill();
  setTimeout(()=>{ map.invalidateSize(); },100);
  renderFilterChips();
+ await loadTerritorios();
  await loadCams();
  populateFilterTV(); render(); renderStats();
 }
@@ -494,6 +520,25 @@ async function loadCams(){
  const {data,error}=await sb.from('camaras').select('*').eq('estacion_id',viewingStationId).order('nombre');
  if(error){ showToast('Error cargando cámaras: '+error.message); cams=[]; return; }
  cams=data||[];
+}
+
+let territorios=[]; let territoriosById={};
+async function loadTerritorios(){
+ if(!viewingStationId){ territorios=[]; territoriosById={}; return; }
+ const {data,error}=await sb.from('territorios').select('*').eq('estacion_id',viewingStationId).order('nombre');
+ if(error){ showToast('Error cargando territorios: '+error.message); territorios=[]; territoriosById={}; return; }
+ territorios=data||[];
+ territoriosById={};
+ territorios.forEach(t=>territoriosById[t.id]=t);
+ poblarSelectTerritorio();
+}
+
+function poblarSelectTerritorio(){
+ let actual=document.getElementById('tv').value;
+ document.getElementById('tv').innerHTML='<option value="">Territorio Vecinal (TV) *</option>'+
+  territorios.map(t=>'<option value="'+t.id+'">'+t.nombre+'</option>').join('')+
+  '<option value="__new__">+ Agregar territorio nuevo...</option>';
+ if(territorios.some(t=>t.id===actual)) document.getElementById('tv').value=actual;
 }
 
 /* ==================== ESTADO GENERAL ==================== */
@@ -519,7 +564,7 @@ function openForm(c=null){
  camId.value=c?.id||'';
  nombre.value=c?.nombre||'';
  direccion.value=c?.direccion||'';
- tv.value=c?.tv||'';
+ tv.value=c?.territorio_id||'';
  const presetTipos=['Hikvision','Dahua','Imou','Hilook'];
  if(c && c.tipo && !presetTipos.includes(c.tipo)){
   tipo.value='Otro'; tipoOtro.value=c.tipo; tipoOtro.classList.remove('d-none');
@@ -543,6 +588,18 @@ whatsapp.value=c?.whatsapp||'';
 function toggleTipoOtro(){
  tipoOtro.classList.toggle('d-none', tipo.value!=='Otro');
  if(tipo.value!=='Otro') tipoOtro.value='';
+}
+
+async function onCambioTerritorio(){
+ if(tv.value!=='__new__') return;
+ let nombre=prompt('Nombre del nuevo territorio (ej. TV-54 (Trupal-Capullanas)):');
+ if(!nombre||!nombre.trim()){ tv.value=''; return; }
+ nombre=nombre.trim();
+ if(!viewingStationId){ alert('No hay estación seleccionada'); tv.value=''; return; }
+ const {data,error}=await sb.from('territorios').insert({nombre,estacion_id:viewingStationId}).select().single();
+ if(error){ alert('Error al crear el territorio: '+error.message); tv.value=''; return; }
+ await loadTerritorios();
+ tv.value=data.id;
 }
 
 function estadoInfo(v){
@@ -617,7 +674,7 @@ async function saveCam(){
   let camData={
    nombre:nombre.value,
    direccion:direccion.value,
-   tv:tv.value,
+   territorio_id:tv.value,
    tipo:(tipo.value==='Otro'?(tipoOtro.value.trim()||'Otro'):tipo.value),
    estado:estado.value,
    cabina:cabina.value,
@@ -750,11 +807,10 @@ function renderFilterChips(){
 }
 
 function populateFilterTV(){
- let tvs=[...new Set(cams.map(c=>c.tv).filter(Boolean))].sort();
  let sel=document.getElementById('filterTV');
  let current=filtroTV;
- sel.innerHTML='<option value="">Todos los TV</option>'+tvs.map(t=>'<option value="'+t+'">'+t+'</option>').join('');
- sel.value=tvs.includes(current)?current:'';
+ sel.innerHTML='<option value="">Todos los TV</option>'+territorios.map(t=>'<option value="'+t.id+'">'+t.nombre+'</option>').join('');
+ sel.value=territorios.some(t=>t.id===current)?current:'';
  filtroTV=sel.value;
 }
 
@@ -779,9 +835,9 @@ function render(){
  let propias=cams;
  document.getElementById('countPill').textContent=propias.length;
  let data=propias.filter(c=>
-  JSON.stringify(c).toLowerCase().includes(q) &&
+  (JSON.stringify(c)+' '+(territoriosById[c.territorio_id]?.nombre||'')).toLowerCase().includes(q) &&
   (filtroEstado===''||c.estado===filtroEstado) &&
-  (filtroTV===''||c.tv===filtroTV)
+  (filtroTV===''||c.territorio_id===filtroTV)
  );
  list.className=(document.getElementById('viewMode')&&document.getElementById('viewMode').value==='2')?'row g-2':'';
  list.innerHTML='';
@@ -790,6 +846,7 @@ function render(){
  }
  data.forEach(c=>{
   let d=document.createElement('div');
+  let tvNombre=territoriosById[c.territorio_id]?.nombre||'';
   d.className=(document.getElementById('viewMode')&&document.getElementById('viewMode').value==='2')?'col-md-6':'w-100'; let inner=document.createElement('div'); inner.className='card cam-card p-2 h-100 mb-2';
   let ei=estadoInfo(c.estado);
   if(ei) inner.style.borderLeftColor=ei.color;
@@ -797,7 +854,7 @@ function render(){
 <div class="cam-name">${c.nombre||''}</div>
 ${c.direccion?'<div class="cam-meta"><i class="bi bi-signpost-split"></i>'+c.direccion+'</div>':''}
 <div class="mt-1 badges-row">
-${c.tv?'<span class="tv-badge"><i class="bi bi-people-fill"></i>TV '+c.tv+'</span>':''}
+${tvNombre?'<span class="tv-badge"><i class="bi bi-people-fill"></i>'+tvNombre+'</span>':''}
 ${ei?'<span class="estado-badge" style="background:'+ei.color+'22;color:'+ei.color+'"><span class="estado-dot" style="background:'+ei.color+'"></span>'+ei.label+'</span>':''}
 ${c.tipo?'<span class="info-badge"><i class="bi bi-camera-video"></i>'+c.tipo+'</span>':''}
 ${c.cabina?'<span class="info-badge"><i class="bi bi-pc-display"></i>'+c.cabina+'</span>':''}
@@ -815,7 +872,7 @@ ${c.cabina?'<span class="info-badge"><i class="bi bi-pc-display"></i>'+c.cabina+
   if(c.lat&&c.lng){
    let eiMarker=estadoInfo(c.estado);
    let mk=L.marker([c.lat,c.lng],{icon:camIcon(eiMarker?eiMarker.color:null)}).bindPopup(
-(()=>{let ei2=estadoInfo(c.estado);return '<b>'+c.nombre+'</b>'+(c.tv?' <span style="color:#e9862c;font-size:.8em">(TV '+c.tv+')</span>':'')+
+(()=>{let ei2=estadoInfo(c.estado);return '<b>'+c.nombre+'</b>'+(tvNombre?' <span style="color:#e9862c;font-size:.8em">('+tvNombre+')</span>':'')+
 (ei2?' <span style="color:'+ei2.color+';font-size:.8em">● '+ei2.label+'</span>':'')+'<br>'+c.direccion+
 (c.tipo||c.cabina?'<br><small>'+(c.tipo||'')+(c.tipo&&c.cabina?' · ':'')+(c.cabina||'')+'</small>':'')+
 (c.foto?'<br><img src="'+c.foto+'" style="max-width:180px;max-height:120px;object-fit:contain">':'')+
@@ -837,7 +894,7 @@ function viewDetails(id){
  <table class="table">
  <tr><th>Nombre</th><td>${c.nombre||''}</td></tr>
  <tr><th>Dirección</th><td>${c.direccion||''}</td></tr>
- <tr><th>Territorio Vecinal (TV)</th><td>${c.tv||''}</td></tr>
+ <tr><th>Territorio Vecinal (TV)</th><td>${territoriosById[c.territorio_id]?.nombre||''}</td></tr>
  <tr><th>Tipo de cámara</th><td>${c.tipo||''}</td></tr>
  <tr><th>Estado</th><td>${ei?'<span class="estado-badge" style="background:'+ei.color+'22;color:'+ei.color+'"><span class="estado-dot" style="background:'+ei.color+'"></span>'+ei.label+'</span>':''}</td></tr>
  <tr><th>Cabina</th><td>${c.cabina||''}</td></tr>
@@ -858,7 +915,7 @@ function viewDetails(id){
 /* ==================== EXPORTACIÓN ==================== */
 function datosExport(){
  return cams.map(c=>({
-  Nombre:c.nombre||'', Direccion:c.direccion||'', TV:c.tv||'', Tipo:c.tipo||'',
+  Nombre:c.nombre||'', Direccion:c.direccion||'', TV:territoriosById[c.territorio_id]?.nombre||'', Tipo:c.tipo||'',
   Estado:estadoInfo(c.estado)?.label||'', Cabina:c.cabina||'',
   Latitud:c.lat||'', Longitud:c.lng||'', Propietario:c.propietario||'', WhatsApp:c.whatsapp||''
  }));
@@ -889,6 +946,101 @@ function exportPDF(){
   styles:{fontSize:8}
  });
  doc.save('camaras_'+currentStationName().replace(/\s+/g,'_')+'.pdf');
+}
+
+/* ==================== GESTIÓN DE TERRITORIOS (TV) ==================== */
+function openTerritoriosAdmin(){
+ if(!viewingStationId){ alert('Selecciona una estación primero'); return; }
+ renderTerritoriosList();
+ new bootstrap.Modal(document.getElementById('territoriosModal')).show();
+}
+
+function renderTerritoriosList(){
+ let el=document.getElementById('territoriosList');
+ if(!territorios.length){ el.innerHTML='<div class="text-muted small">Aún no tienes territorios creados.</div>'; return; }
+ el.innerHTML=territorios.map(t=>{
+  let n=cams.filter(c=>c.territorio_id===t.id).length;
+  return '<div class="station-row"><div class="st-name">'+t.nombre+'<div class="small text-muted">'+n+' cámara(s)</div></div>'+
+  '<button class="btn btn-sm btn-outline-secondary me-1" onclick="editTerritorio(\''+t.id+'\')"><i class="bi bi-pencil"></i></button>'+
+  '<button class="btn btn-sm btn-outline-danger" onclick="deleteTerritorio(\''+t.id+'\')"><i class="bi bi-trash"></i></button></div>';
+ }).join('');
+}
+
+async function addTerritorio(){
+ let nombre=document.getElementById('newTerritorioName').value.trim();
+ if(!nombre){ alert('Escribe el nombre del territorio.'); return; }
+ const {error}=await sb.from('territorios').insert({nombre,estacion_id:viewingStationId});
+ if(error){ alert('Error: '+error.message); return; }
+ document.getElementById('newTerritorioName').value='';
+ await loadTerritorios();
+ renderTerritoriosList(); populateFilterTV();
+ alert('Territorio agregado.');
+}
+
+async function editTerritorio(id){
+ let t=territorios.find(x=>x.id===id);
+ if(!t) return;
+ let nuevoNombre=prompt('Nuevo nombre para este territorio:',t.nombre);
+ if(nuevoNombre===null) return;
+ nuevoNombre=nuevoNombre.trim();
+ if(!nuevoNombre){ alert('El nombre no puede quedar vacío.'); return; }
+ const {error}=await sb.from('territorios').update({nombre:nuevoNombre}).eq('id',id);
+ if(error){ alert('Error: '+error.message); return; }
+ await loadTerritorios(); await loadCams();
+ renderTerritoriosList(); populateFilterTV(); render(); renderStats();
+ alert('Territorio actualizado. Las cámaras conectadas a él ya muestran el nuevo nombre.');
+}
+
+async function deleteTerritorio(id){
+ let n=cams.filter(c=>c.territorio_id===id).length;
+ let msg=n>0
+  ? '¿Eliminar este territorio? '+n+' cámara(s) se quedarán sin territorio asignado y tendrás que reasignarlas.'
+  : '¿Eliminar este territorio?';
+ if(!confirm(msg)) return;
+ const {error}=await sb.from('territorios').delete().eq('id',id);
+ if(error){ alert('Error: '+error.message); return; }
+ await loadTerritorios(); await loadCams();
+ renderTerritoriosList(); populateFilterTV(); render(); renderStats();
+ alert('Territorio eliminado.');
+}
+
+/* ==================== REPORTE DE TEXTO POR TV ==================== */
+function generarReporte(){
+ if(!cams.length) return 'No hay cámaras registradas en esta estación.';
+ let grupos={};
+ cams.forEach(c=>{
+  let key=c.territorio_id||'sin_tv';
+  if(!grupos[key]) grupos[key]={nombre:territoriosById[c.territorio_id]?.nombre||'Sin TV asignado',operativas:0,inoperativas:0,nombresInoperativas:[]};
+  if(c.estado==='operativa') grupos[key].operativas++;
+  if(c.estado==='inoperativa'){ grupos[key].inoperativas++; grupos[key].nombresInoperativas.push(c.nombre); }
+ });
+ let keys=Object.keys(grupos).sort((a,b)=>grupos[a].nombre.localeCompare(grupos[b].nombre,undefined,{numeric:true}));
+ return keys.map(k=>{
+  let g=grupos[k];
+  let bloque='📍'+g.nombre+
+   '\n✅ Cámaras operativas: '+String(g.operativas).padStart(2,'0')+
+   '\n🚫 Cámaras inoperativas: '+String(g.inoperativas).padStart(2,'0');
+  if(g.inoperativas>0){
+   bloque+='\n'+g.nombresInoperativas.map(n=>'* '+n).join('\n');
+  }
+  return bloque;
+ }).join('\n\n');
+}
+
+function abrirReporte(){
+ document.getElementById('reporteTexto').value=generarReporte();
+ new bootstrap.Modal(document.getElementById('reporteModal')).show();
+}
+
+function copiarReporte(){
+ let ta=document.getElementById('reporteTexto');
+ ta.select();
+ navigator.clipboard.writeText(ta.value).then(()=>{
+  showToast('Reporte copiado');
+ }).catch(()=>{
+  document.execCommand('copy');
+  showToast('Reporte copiado');
+ });
 }
 
 /* ==================== INICIO ==================== */
