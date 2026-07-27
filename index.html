@@ -312,7 +312,7 @@ body.dark .info-badge{background:#242a33; color:#b7c0cc;}
 </div>
 </div>
 
-<div class="position-fixed top-0 end-0 p-3" style="z-index:9999">
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index:9999">
 <div id="liveToast" class="toast text-bg-success border-0">
 <div class="d-flex">
 <div class="toast-body" id="toastMsg">OK</div>
@@ -325,18 +325,30 @@ body.dark .info-badge{background:#242a33; color:#b7c0cc;}
 </div></div></div>
 <div class="modal fade" id="deleteModal"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header bg-danger text-white"><h5 class="modal-title">Confirmar eliminación</h5></div><div class="modal-body" id="deleteText"></div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button class="btn btn-danger" id="confirmDeleteBtn">Eliminar</button></div></div></div></div>
 
+<div class="modal fade" id="genericDeleteModal"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header bg-danger text-white"><h5 class="modal-title">Confirmar eliminación</h5></div><div class="modal-body" id="genericDeleteText"></div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button class="btn btn-danger" id="genericDeleteConfirmBtn">Eliminar</button></div></div></div></div>
+
 <!-- Stations admin modal -->
 <div class="modal fade" id="propietariosModal"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content">
 <div class="modal-header"><h5><i class="bi bi-person-lines-fill me-1"></i>Mis propietarios</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
 <div class="modal-body">
 <div id="propietariosList"></div>
 <hr>
-<div class="fw-semibold mb-2 small">Nuevo propietario</div>
-<input id="newPropietarioName" class="form-control mb-2" placeholder="Nombre del propietario">
-<input id="newPropietarioWpp" class="form-control mb-2" placeholder="WhatsApp (opcional, ej. 51999999999)">
-<button class="btn btn-primary w-100" onclick="addPropietario()"><i class="bi bi-plus-lg me-1"></i>Agregar propietario</button>
+<button class="btn btn-primary w-100" onclick="quickAddContext=null;abrirFormPropietario()"><i class="bi bi-plus-lg me-1"></i>Nuevo propietario</button>
 </div>
 <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button></div>
+</div></div></div>
+
+<div class="modal fade" id="propietarioFormModal"><div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+<div class="modal-header"><h5 id="propietarioFormTitulo">Nuevo propietario</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+<div class="modal-body">
+<input type="hidden" id="editPropietarioId">
+<div class="form-icon-input mb-2"><i class="bi bi-person-fill"></i><input id="editPropietarioNombre" class="form-control" placeholder="Nombre del propietario"></div>
+<div class="form-icon-input mb-2"><i class="bi bi-whatsapp"></i><input id="editPropietarioWpp" class="form-control" placeholder="WhatsApp (opcional, ej. 51999999999)"></div>
+</div>
+<div class="modal-footer">
+<button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+<button class="btn btn-success" onclick="guardarPropietario()"><i class="bi bi-check-lg me-1"></i>Guardar</button>
+</div>
 </div></div></div>
 
 <div class="modal fade" id="territoriosModal"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content">
@@ -344,11 +356,21 @@ body.dark .info-badge{background:#242a33; color:#b7c0cc;}
 <div class="modal-body">
 <div id="territoriosList"></div>
 <hr>
-<div class="fw-semibold mb-2 small">Nuevo territorio</div>
-<input id="newTerritorioName" class="form-control mb-2" placeholder="Ej. TV-54 (Trupal-Capullanas)">
-<button class="btn btn-primary w-100" onclick="addTerritorio()"><i class="bi bi-plus-lg me-1"></i>Agregar territorio</button>
+<button class="btn btn-primary w-100" onclick="quickAddContext=null;abrirFormTerritorio()"><i class="bi bi-plus-lg me-1"></i>Nuevo territorio</button>
 </div>
 <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button></div>
+</div></div></div>
+
+<div class="modal fade" id="territorioFormModal"><div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+<div class="modal-header"><h5 id="territorioFormTitulo">Nuevo territorio</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+<div class="modal-body">
+<input type="hidden" id="editTerritorioId">
+<div class="form-icon-input mb-2"><i class="bi bi-geo"></i><input id="editTerritorioNombre" class="form-control" placeholder="Ej. TV-54 (Trupal-Capullanas)"></div>
+</div>
+<div class="modal-footer">
+<button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+<button class="btn btn-success" onclick="guardarTerritorio()"><i class="bi bi-check-lg me-1"></i>Guardar</button>
+</div>
 </div></div></div>
 
 <div class="modal fade" id="reporteModal"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content">
@@ -367,13 +389,23 @@ body.dark .info-badge{background:#242a33; color:#b7c0cc;}
 <div class="modal-body">
 <div id="stationsList"></div>
 <hr>
-<div class="fw-semibold mb-2 small">Vincular estación nueva</div>
-<div class="small text-muted mb-2">1. Crea el usuario en Supabase → Authentication → Add user.<br>2. Copia su UID y pégalo aquí.</div>
-<input id="newStationName" class="form-control mb-2" placeholder="Nombre de la estación">
-<input id="newStationUid" class="form-control mb-2" placeholder="UID del usuario (de Supabase Auth)">
-<button class="btn btn-primary w-100" onclick="addStation()"><i class="bi bi-plus-lg me-1"></i>Vincular estación</button>
+<button class="btn btn-primary w-100" onclick="abrirFormEstacion()"><i class="bi bi-plus-lg me-1"></i>Nueva estación</button>
 </div>
 <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button></div>
+</div></div></div>
+
+<div class="modal fade" id="estacionFormModal"><div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+<div class="modal-header"><h5 id="estacionFormTitulo">Nueva estación</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+<div class="modal-body">
+<input type="hidden" id="editStationId">
+<div class="small text-muted mb-2">1. Crea el usuario en Supabase → Authentication → Add user.<br>2. Copia su UID y pégalo aquí.</div>
+<div class="form-icon-input mb-2"><i class="bi bi-buildings"></i><input id="editStationName" class="form-control" placeholder="Nombre de la estación"></div>
+<div class="form-icon-input mb-2"><i class="bi bi-key-fill"></i><input id="editStationUid" class="form-control" placeholder="UID del usuario (de Supabase Auth)"></div>
+</div>
+<div class="modal-footer">
+<button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+<button class="btn btn-success" onclick="guardarEstacion()"><i class="bi bi-check-lg me-1"></i>Guardar</button>
+</div>
 </div></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -473,49 +505,46 @@ async function renderStationsList(){
  el.innerHTML=stations.map(s=>{
   let n=(allCams||[]).filter(c=>c.estacion_id===s.id).length;
   return '<div class="station-row"><div class="st-name">'+s.nombre+'<div class="small text-muted">'+n+' cámara(s)</div></div>'+
-  '<button class="btn btn-sm btn-outline-secondary me-1" onclick="editStation(\''+s.id+'\')"><i class="bi bi-pencil"></i></button>'+
+  '<button class="btn btn-sm btn-outline-secondary me-1" onclick="abrirFormEstacion(\''+s.id+'\')"><i class="bi bi-pencil"></i></button>'+
   '<button class="btn btn-sm btn-outline-danger" onclick="deleteStation(\''+s.id+'\')"><i class="bi bi-trash"></i></button></div>';
  }).join('');
 }
 
-async function editStation(id){
- let s=stations.find(x=>x.id===id);
- if(!s) return;
- let nuevoNombre=prompt('Nuevo nombre para esta estación:',s.nombre);
- if(nuevoNombre===null) return; // canceló
- nuevoNombre=nuevoNombre.trim();
- if(!nuevoNombre){ alert('El nombre no puede quedar vacío.'); return; }
- const {error}=await sb.from('estaciones').update({nombre:nuevoNombre}).eq('id',id);
- if(error){ alert('Error al actualizar: '+error.message); return; }
+function abrirFormEstacion(id){
+ let s=id?stations.find(x=>x.id===id):null;
+ document.getElementById('estacionFormTitulo').textContent=s?'Editar estación':'Nueva estación';
+ document.getElementById('editStationId').value=s?s.id:'';
+ document.getElementById('editStationName').value=s?s.nombre:'';
+ document.getElementById('editStationUid').value=s?s.user_id:'';
+ new bootstrap.Modal(document.getElementById('estacionFormModal')).show();
+}
+
+async function guardarEstacion(){
+ let id=document.getElementById('editStationId').value;
+ let nombre=document.getElementById('editStationName').value.trim();
+ let uid=document.getElementById('editStationUid').value.trim();
+ if(!nombre||!uid){ showToast('Completa el nombre y el UID'); return; }
+ let error;
+ if(id){ ({error}=await sb.from('estaciones').update({nombre,user_id:uid}).eq('id',id)); }
+ else{ ({error}=await sb.from('estaciones').insert([{nombre,user_id:uid}])); }
+ if(error){ showToast('Error: '+error.message); return; }
  let {data:allStations}=await sb.from('estaciones').select('*').order('nombre');
  stations=allStations||[];
  renderStationsList(); renderStationPill();
- alert('Estación actualizada correctamente.');
+ if(!viewingStationId&&stations[0]) viewingStationId=stations[0].id;
+ bootstrap.Modal.getInstance(document.getElementById('estacionFormModal')).hide();
+ showToast(id?'Estación actualizada':'Estación vinculada correctamente');
 }
 
-async function addStation(){
- let nombre=document.getElementById('newStationName').value.trim();
- let uid=document.getElementById('newStationUid').value.trim();
- if(!nombre||!uid){ alert('Completa el nombre y el UID.'); return; }
- const {error}=await sb.from('estaciones').insert([{nombre,user_id:uid}]);
- if(error){ alert('Error: '+error.message); return; }
- document.getElementById('newStationName').value='';
- document.getElementById('newStationUid').value='';
- let {data:allStations}=await sb.from('estaciones').select('*').order('nombre');
- stations=allStations||[];
- renderStationsList(); renderStationPill();
- if(!viewingStationId) viewingStationId=stations[0].id;
- alert('Estación vinculada correctamente.');
-}
-
-async function deleteStation(id){
- if(!confirm('¿Eliminar esta estación? Sus cámaras también se eliminarán.')) return;
- const {error}=await sb.from('estaciones').delete().eq('id',id);
- if(error){ alert('Error: '+error.message); return; }
- stations=stations.filter(s=>s.id!==id);
- if(viewingStationId===id) viewingStationId=stations[0]?stations[0].id:null;
- renderStationsList(); renderStationPill(); await loadCams(); render(); renderStats();
- alert('Estación eliminada.');
+function deleteStation(id){
+ confirmarEliminar('¿Eliminar esta estación? Sus cámaras también se eliminarán.',async()=>{
+  const {error}=await sb.from('estaciones').delete().eq('id',id);
+  if(error){ showToast('Error: '+error.message); return; }
+  stations=stations.filter(s=>s.id!==id);
+  if(viewingStationId===id) viewingStationId=stations[0]?stations[0].id:null;
+  renderStationsList(); renderStationPill(); await loadCams(); render(); renderStats();
+  showToast('Estación eliminada');
+ });
 }
 
 async function enterApp(){
@@ -590,7 +619,16 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 const clusterGroup=L.markerClusterGroup({maxClusterRadius:45});
 map.addLayer(clusterGroup);
 
-let markers=[];let markersById={};let deleteId=null;const toast=new bootstrap.Toast(document.getElementById('liveToast'),{delay:900}); const detailsModal=new bootstrap.Modal(document.getElementById('detailsModal'));const deleteModal=new bootstrap.Modal(document.getElementById('deleteModal'));function showToast(t){toast.hide();toastMsg.textContent=t;toast.show();}
+let markers=[];let markersById={};let deleteId=null;const toast=new bootstrap.Toast(document.getElementById('liveToast'),{delay:3500}); const detailsModal=new bootstrap.Modal(document.getElementById('detailsModal'));const deleteModal=new bootstrap.Modal(document.getElementById('deleteModal'));function showToast(t){toast.hide();toastMsg.textContent=t;toast.show();}
+const genericDeleteModal=new bootstrap.Modal(document.getElementById('genericDeleteModal'));
+function confirmarEliminar(mensaje,callback){
+ document.getElementById('genericDeleteText').innerHTML=mensaje;
+ document.getElementById('genericDeleteConfirmBtn').onclick=async()=>{
+  genericDeleteModal.hide();
+  await callback();
+ };
+ genericDeleteModal.show();
+}
 let selecting=false,tempMarker=null,pickerMap=null,pickerMarker=null,selectedLatLng=null; const pickerModal=new bootstrap.Modal(document.getElementById('mapPickerModal'));
 let filtroEstado='', filtroTV='';
 
@@ -631,31 +669,20 @@ function toggleTipoOtro(){
  if(tipo.value!=='Otro') tipoOtro.value='';
 }
 
-async function onCambioTerritorio(){
- if(tv.value!=='__new__') return;
- let nombre=prompt('Nombre del nuevo territorio (ej. TV-54 (Trupal-Capullanas)):');
- if(!nombre||!nombre.trim()){ tv.value=''; return; }
- nombre=nombre.trim();
- if(!viewingStationId){ alert('No hay estación seleccionada'); tv.value=''; return; }
- const {data,error}=await sb.from('territorios').insert({nombre,estacion_id:viewingStationId}).select().single();
- if(error){ alert('Error al crear el territorio: '+error.message); tv.value=''; return; }
- await loadTerritorios();
- tv.value=data.id;
+let quickAddContext=null;
+
+function onCambioTerritorio(){
+ if(tv.value!=='__new__'){ return; }
+ tv.value='';
+ quickAddContext='tv';
+ abrirFormTerritorio();
 }
 
-async function onCambioPropietario(){
+function onCambioPropietario(){
  if(propietario.value!=='__new__'){ mostrarWhatsappPropietario(); return; }
- let nombre=prompt('Nombre del nuevo propietario:');
- if(!nombre||!nombre.trim()){ propietario.value=''; mostrarWhatsappPropietario(); return; }
- nombre=nombre.trim();
- if(!viewingStationId){ alert('No hay estación seleccionada'); propietario.value=''; return; }
- let wpp=prompt('WhatsApp del propietario (opcional, ej. 51999999999):','');
- wpp=(wpp||'').trim();
- const {data,error}=await sb.from('propietarios').insert({nombre,whatsapp:wpp||null,estacion_id:viewingStationId}).select().single();
- if(error){ alert('Error al crear el propietario: '+error.message); propietario.value=''; return; }
- await loadPropietarios();
- propietario.value=data.id;
- mostrarWhatsappPropietario();
+ propietario.value='';
+ quickAddContext='propietario';
+ abrirFormPropietario();
 }
 
 function estadoInfo(v){
@@ -687,7 +714,7 @@ function seleccionarMapa(){
 }
 
 function confirmLocation(){
- if(!selectedLatLng){ alert('Seleccione una ubicación'); return; }
+ if(!selectedLatLng){ showToast('Seleccione una ubicación'); return; }
  lat.value=selectedLatLng.lat.toFixed(6);
  lng.value=selectedLatLng.lng.toFixed(6);
  maps.value='https://www.google.com/maps?q='+selectedLatLng.lat+','+selectedLatLng.lng;
@@ -1005,7 +1032,7 @@ function exportPDF(){
 
 /* ==================== GESTIÓN DE TERRITORIOS (TV) ==================== */
 function openTerritoriosAdmin(){
- if(!viewingStationId){ alert('Selecciona una estación primero'); return; }
+ if(!viewingStationId){ showToast('Selecciona una estación primero'); return; }
  renderTerritoriosList();
  new bootstrap.Modal(document.getElementById('territoriosModal')).show();
 }
@@ -1016,52 +1043,53 @@ function renderTerritoriosList(){
  el.innerHTML=territorios.map(t=>{
   let n=cams.filter(c=>c.territorio_id===t.id).length;
   return '<div class="station-row"><div class="st-name">'+t.nombre+'<div class="small text-muted">'+n+' cámara(s)</div></div>'+
-  '<button class="btn btn-sm btn-outline-secondary me-1" onclick="editTerritorio(\''+t.id+'\')"><i class="bi bi-pencil"></i></button>'+
+  '<button class="btn btn-sm btn-outline-secondary me-1" onclick="abrirFormTerritorio(\''+t.id+'\')"><i class="bi bi-pencil"></i></button>'+
   '<button class="btn btn-sm btn-outline-danger" onclick="deleteTerritorio(\''+t.id+'\')"><i class="bi bi-trash"></i></button></div>';
  }).join('');
 }
 
-async function addTerritorio(){
- let nombre=document.getElementById('newTerritorioName').value.trim();
- if(!nombre){ alert('Escribe el nombre del territorio.'); return; }
- const {error}=await sb.from('territorios').insert({nombre,estacion_id:viewingStationId});
- if(error){ alert('Error: '+error.message); return; }
- document.getElementById('newTerritorioName').value='';
- await loadTerritorios();
- renderTerritoriosList(); populateFilterTV();
- alert('Territorio agregado.');
+function abrirFormTerritorio(id){
+ if(id) quickAddContext=null;
+ let t=id?territorios.find(x=>x.id===id):null;
+ document.getElementById('territorioFormTitulo').textContent=t?'Editar territorio':'Nuevo territorio';
+ document.getElementById('editTerritorioId').value=t?t.id:'';
+ document.getElementById('editTerritorioNombre').value=t?t.nombre:'';
+ new bootstrap.Modal(document.getElementById('territorioFormModal')).show();
 }
 
-async function editTerritorio(id){
- let t=territorios.find(x=>x.id===id);
- if(!t) return;
- let nuevoNombre=prompt('Nuevo nombre para este territorio:',t.nombre);
- if(nuevoNombre===null) return;
- nuevoNombre=nuevoNombre.trim();
- if(!nuevoNombre){ alert('El nombre no puede quedar vacío.'); return; }
- const {error}=await sb.from('territorios').update({nombre:nuevoNombre}).eq('id',id);
- if(error){ alert('Error: '+error.message); return; }
+async function guardarTerritorio(){
+ let id=document.getElementById('editTerritorioId').value;
+ let nombre=document.getElementById('editTerritorioNombre').value.trim();
+ if(!nombre){ showToast('Escribe el nombre del territorio'); return; }
+ if(!viewingStationId){ showToast('No hay estación seleccionada'); return; }
+ let error,data;
+ if(id){ ({error}=await sb.from('territorios').update({nombre}).eq('id',id)); }
+ else{ ({data,error}=await sb.from('territorios').insert({nombre,estacion_id:viewingStationId}).select().single()); }
+ if(error){ showToast('Error: '+error.message); return; }
  await loadTerritorios(); await loadCams();
+ if(!id && quickAddContext==='tv'){ tv.value=data.id; quickAddContext=null; }
  renderTerritoriosList(); populateFilterTV(); render(); renderStats();
- alert('Territorio actualizado. Las cámaras conectadas a él ya muestran el nuevo nombre.');
+ bootstrap.Modal.getInstance(document.getElementById('territorioFormModal')).hide();
+ showToast(id?'Territorio actualizado':'Territorio agregado');
 }
 
-async function deleteTerritorio(id){
+function deleteTerritorio(id){
  let n=cams.filter(c=>c.territorio_id===id).length;
  let msg=n>0
   ? '¿Eliminar este territorio? '+n+' cámara(s) se quedarán sin territorio asignado y tendrás que reasignarlas.'
   : '¿Eliminar este territorio?';
- if(!confirm(msg)) return;
- const {error}=await sb.from('territorios').delete().eq('id',id);
- if(error){ alert('Error: '+error.message); return; }
- await loadTerritorios(); await loadCams();
- renderTerritoriosList(); populateFilterTV(); render(); renderStats();
- alert('Territorio eliminado.');
+ confirmarEliminar(msg,async()=>{
+  const {error}=await sb.from('territorios').delete().eq('id',id);
+  if(error){ showToast('Error: '+error.message); return; }
+  await loadTerritorios(); await loadCams();
+  renderTerritoriosList(); populateFilterTV(); render(); renderStats();
+  showToast('Territorio eliminado');
+ });
 }
 
 /* ==================== GESTIÓN DE PROPIETARIOS ==================== */
 function openPropietariosAdmin(){
- if(!viewingStationId){ alert('Selecciona una estación primero'); return; }
+ if(!viewingStationId){ showToast('Selecciona una estación primero'); return; }
  renderPropietariosList();
  new bootstrap.Modal(document.getElementById('propietariosModal')).show();
 }
@@ -1072,52 +1100,50 @@ function renderPropietariosList(){
  el.innerHTML=propietarios.map(p=>{
   let n=cams.filter(c=>c.propietario_id===p.id).length;
   return '<div class="station-row"><div class="st-name">'+p.nombre+'<div class="small text-muted">'+(p.whatsapp?'WhatsApp: '+p.whatsapp+' · ':'')+n+' cámara(s)</div></div>'+
-  '<button class="btn btn-sm btn-outline-secondary me-1" onclick="editPropietario(\''+p.id+'\')"><i class="bi bi-pencil"></i></button>'+
+  '<button class="btn btn-sm btn-outline-secondary me-1" onclick="abrirFormPropietario(\''+p.id+'\')"><i class="bi bi-pencil"></i></button>'+
   '<button class="btn btn-sm btn-outline-danger" onclick="deletePropietario(\''+p.id+'\')"><i class="bi bi-trash"></i></button></div>';
  }).join('');
 }
 
-async function addPropietario(){
- let nombre=document.getElementById('newPropietarioName').value.trim();
- let wpp=document.getElementById('newPropietarioWpp').value.trim();
- if(!nombre){ alert('Escribe el nombre del propietario.'); return; }
- const {error}=await sb.from('propietarios').insert({nombre,whatsapp:wpp||null,estacion_id:viewingStationId});
- if(error){ alert('Error: '+error.message); return; }
- document.getElementById('newPropietarioName').value='';
- document.getElementById('newPropietarioWpp').value='';
- await loadPropietarios();
- renderPropietariosList();
- alert('Propietario agregado.');
+function abrirFormPropietario(id){
+ if(id) quickAddContext=null;
+ let p=id?propietarios.find(x=>x.id===id):null;
+ document.getElementById('propietarioFormTitulo').textContent=p?'Editar propietario':'Nuevo propietario';
+ document.getElementById('editPropietarioId').value=p?p.id:'';
+ document.getElementById('editPropietarioNombre').value=p?p.nombre:'';
+ document.getElementById('editPropietarioWpp').value=p?(p.whatsapp||''):'';
+ new bootstrap.Modal(document.getElementById('propietarioFormModal')).show();
 }
 
-async function editPropietario(id){
- let p=propietarios.find(x=>x.id===id);
- if(!p) return;
- let nuevoNombre=prompt('Nuevo nombre para este propietario:',p.nombre);
- if(nuevoNombre===null) return;
- nuevoNombre=nuevoNombre.trim();
- if(!nuevoNombre){ alert('El nombre no puede quedar vacío.'); return; }
- let nuevoWpp=prompt('WhatsApp de este propietario (déjalo vacío si no tiene):',p.whatsapp||'');
- if(nuevoWpp===null) return;
- nuevoWpp=nuevoWpp.trim();
- const {error}=await sb.from('propietarios').update({nombre:nuevoNombre,whatsapp:nuevoWpp||null}).eq('id',id);
- if(error){ alert('Error: '+error.message); return; }
+async function guardarPropietario(){
+ let id=document.getElementById('editPropietarioId').value;
+ let nombre=document.getElementById('editPropietarioNombre').value.trim();
+ let wpp=document.getElementById('editPropietarioWpp').value.trim();
+ if(!nombre){ showToast('Escribe el nombre del propietario'); return; }
+ if(!viewingStationId){ showToast('No hay estación seleccionada'); return; }
+ let error,data;
+ if(id){ ({error}=await sb.from('propietarios').update({nombre,whatsapp:wpp||null}).eq('id',id)); }
+ else{ ({data,error}=await sb.from('propietarios').insert({nombre,whatsapp:wpp||null,estacion_id:viewingStationId}).select().single()); }
+ if(error){ showToast('Error: '+error.message); return; }
  await loadPropietarios(); await loadCams();
+ if(!id && quickAddContext==='propietario'){ propietario.value=data.id; quickAddContext=null; mostrarWhatsappPropietario(); }
  renderPropietariosList(); render(); renderStats();
- alert('Propietario actualizado. Sus cámaras ya muestran los datos nuevos.');
+ bootstrap.Modal.getInstance(document.getElementById('propietarioFormModal')).hide();
+ showToast(id?'Propietario actualizado':'Propietario agregado');
 }
 
-async function deletePropietario(id){
+function deletePropietario(id){
  let n=cams.filter(c=>c.propietario_id===id).length;
  let msg=n>0
   ? '¿Eliminar este propietario? '+n+' cámara(s) se quedarán sin propietario asignado y tendrás que reasignarlas.'
   : '¿Eliminar este propietario?';
- if(!confirm(msg)) return;
- const {error}=await sb.from('propietarios').delete().eq('id',id);
- if(error){ alert('Error: '+error.message); return; }
- await loadPropietarios(); await loadCams();
- renderPropietariosList(); render(); renderStats();
- alert('Propietario eliminado.');
+ confirmarEliminar(msg,async()=>{
+  const {error}=await sb.from('propietarios').delete().eq('id',id);
+  if(error){ showToast('Error: '+error.message); return; }
+  await loadPropietarios(); await loadCams();
+  renderPropietariosList(); render(); renderStats();
+  showToast('Propietario eliminado');
+ });
 }
 
 /* ==================== REPORTE DE TEXTO POR TV ==================== */
