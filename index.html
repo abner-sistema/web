@@ -204,6 +204,7 @@ body.dark .info-badge{background:#242a33; color:#b7c0cc;}
 <button class="btn btn-icon-action btn-sm" onclick="exportPDF()" title="Exportar PDF"><i class="bi bi-file-earmark-pdf"></i> <span class="d-none d-sm-inline">PDF</span></button>
 <button class="btn btn-icon-action btn-sm" onclick="abrirReporte()" title="Reporte de texto"><i class="bi bi-chat-square-text"></i> <span class="d-none d-sm-inline">Reporte</span></button>
 <button class="btn btn-icon-action btn-sm" onclick="openTerritoriosAdmin()" title="Gestionar territorios"><i class="bi bi-geo"></i> <span class="d-none d-sm-inline">Territorios</span></button>
+<button class="btn btn-icon-action btn-sm" onclick="openPropietariosAdmin()" title="Gestionar propietarios"><i class="bi bi-person-lines-fill"></i> <span class="d-none d-sm-inline">Propietarios</span></button>
 <button class="btn btn-icon-action btn-sm" onclick="logout()" title="Cerrar sesión"><i class="bi bi-box-arrow-right"></i> <span class="d-none d-sm-inline">Salir</span></button>
 </div>
 
@@ -280,8 +281,8 @@ body.dark .info-badge{background:#242a33; color:#b7c0cc;}
 </div>
 <button class="btn btn-outline-primary w-100 mb-2" id="btnSeleccionarMapa" onclick="seleccionarMapa()"><i class="bi bi-geo-alt-fill me-1"></i>Seleccionar en mapa *</button>
 <div class="form-icon-input mb-2"><i class="bi bi-link-45deg"></i><input id="maps" class="form-control" placeholder="URL Google Maps"></div>
-<div class="form-icon-input mb-2"><i class="bi bi-person-fill"></i><input id="propietario" class="form-control" placeholder="Propietario *"></div>
-<div class="form-icon-input mb-2"><i class="bi bi-whatsapp"></i><input id="whatsapp" class="form-control" placeholder="WhatsApp (51999999999)"></div>
+<div class="form-icon-input mb-2"><i class="bi bi-person-fill"></i><select id="propietario" class="form-select ps-4" onchange="onCambioPropietario()"><option value="">Propietario *</option></select></div>
+<div class="small text-muted mb-2" id="propietarioWhatsappInfo"><i class="bi bi-whatsapp"></i> Sin WhatsApp registrado para este propietario</div>
 <label class="form-label small text-muted mb-1">Foto de la cámara *</label>
 <input id="foto" type="file" class="form-control" accept="image/*">
 <div id="fotoActualNota" class="small text-muted mt-1 d-none">Ya tiene una foto guardada. Solo sube una nueva si quieres reemplazarla.</div>
@@ -325,6 +326,19 @@ body.dark .info-badge{background:#242a33; color:#b7c0cc;}
 <div class="modal fade" id="deleteModal"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header bg-danger text-white"><h5 class="modal-title">Confirmar eliminación</h5></div><div class="modal-body" id="deleteText"></div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button class="btn btn-danger" id="confirmDeleteBtn">Eliminar</button></div></div></div></div>
 
 <!-- Stations admin modal -->
+<div class="modal fade" id="propietariosModal"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content">
+<div class="modal-header"><h5><i class="bi bi-person-lines-fill me-1"></i>Mis propietarios</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+<div class="modal-body">
+<div id="propietariosList"></div>
+<hr>
+<div class="fw-semibold mb-2 small">Nuevo propietario</div>
+<input id="newPropietarioName" class="form-control mb-2" placeholder="Nombre del propietario">
+<input id="newPropietarioWpp" class="form-control mb-2" placeholder="WhatsApp (opcional, ej. 51999999999)">
+<button class="btn btn-primary w-100" onclick="addPropietario()"><i class="bi bi-plus-lg me-1"></i>Agregar propietario</button>
+</div>
+<div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button></div>
+</div></div></div>
+
 <div class="modal fade" id="territoriosModal"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content">
 <div class="modal-header"><h5><i class="bi bi-geo me-1"></i>Mis territorios (TV)</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
 <div class="modal-body">
@@ -443,7 +457,7 @@ function renderStationPill(){
 async function cambiarEstacionVista(id){
  viewingStationId=id;
  filtroEstado=''; filtroTV=''; document.getElementById('search').value='';
- renderFilterChips(); await loadTerritorios(); await loadCams(); populateFilterTV(); render(); renderStats();
+ renderFilterChips(); await loadTerritorios(); await loadPropietarios(); await loadCams(); populateFilterTV(); render(); renderStats();
 }
 
 function openStationsAdmin(){
@@ -511,6 +525,7 @@ async function enterApp(){
  setTimeout(()=>{ map.invalidateSize(); },100);
  renderFilterChips();
  await loadTerritorios();
+ await loadPropietarios();
  await loadCams();
  populateFilterTV(); render(); renderStats();
 }
@@ -539,6 +554,32 @@ function poblarSelectTerritorio(){
   territorios.map(t=>'<option value="'+t.id+'">'+t.nombre+'</option>').join('')+
   '<option value="__new__">+ Agregar territorio nuevo...</option>';
  if(territorios.some(t=>t.id===actual)) document.getElementById('tv').value=actual;
+}
+
+let propietarios=[]; let propietariosById={};
+async function loadPropietarios(){
+ if(!viewingStationId){ propietarios=[]; propietariosById={}; return; }
+ const {data,error}=await sb.from('propietarios').select('*').eq('estacion_id',viewingStationId).order('nombre');
+ if(error){ showToast('Error cargando propietarios: '+error.message); propietarios=[]; propietariosById={}; return; }
+ propietarios=data||[];
+ propietariosById={};
+ propietarios.forEach(p=>propietariosById[p.id]=p);
+ poblarSelectPropietario();
+}
+
+function poblarSelectPropietario(){
+ let actual=document.getElementById('propietario').value;
+ document.getElementById('propietario').innerHTML='<option value="">Propietario *</option>'+
+  propietarios.map(p=>'<option value="'+p.id+'">'+p.nombre+'</option>').join('')+
+  '<option value="__new__">+ Agregar propietario nuevo...</option>';
+ if(propietarios.some(p=>p.id===actual)) document.getElementById('propietario').value=actual;
+ mostrarWhatsappPropietario();
+}
+
+function mostrarWhatsappPropietario(){
+ let p=propietariosById[document.getElementById('propietario').value];
+ document.getElementById('propietarioWhatsappInfo').innerHTML=
+  '<i class="bi bi-whatsapp"></i> '+(p&&p.whatsapp?'WhatsApp: '+p.whatsapp:'Sin WhatsApp registrado para este propietario');
 }
 
 /* ==================== ESTADO GENERAL ==================== */
@@ -576,8 +617,8 @@ function openForm(c=null){
  lat.value=c?.lat||'';
  lng.value=c?.lng||'';
  maps.value=c?.maps||'';
-propietario.value=c?.propietario||'';
-whatsapp.value=c?.whatsapp||'';
+propietario.value=c?.propietario_id||'';
+mostrarWhatsappPropietario();
  foto.value='';
  document.getElementById('fotoActualNota').classList.toggle('d-none', !(c && c.foto));
  [nombre,direccion,tv,tipo,cabina,estado,lat,lng,propietario].forEach(el=>el.classList.remove('is-invalid-field'));
@@ -600,6 +641,21 @@ async function onCambioTerritorio(){
  if(error){ alert('Error al crear el territorio: '+error.message); tv.value=''; return; }
  await loadTerritorios();
  tv.value=data.id;
+}
+
+async function onCambioPropietario(){
+ if(propietario.value!=='__new__'){ mostrarWhatsappPropietario(); return; }
+ let nombre=prompt('Nombre del nuevo propietario:');
+ if(!nombre||!nombre.trim()){ propietario.value=''; mostrarWhatsappPropietario(); return; }
+ nombre=nombre.trim();
+ if(!viewingStationId){ alert('No hay estación seleccionada'); propietario.value=''; return; }
+ let wpp=prompt('WhatsApp del propietario (opcional, ej. 51999999999):','');
+ wpp=(wpp||'').trim();
+ const {data,error}=await sb.from('propietarios').insert({nombre,whatsapp:wpp||null,estacion_id:viewingStationId}).select().single();
+ if(error){ alert('Error al crear el propietario: '+error.message); propietario.value=''; return; }
+ await loadPropietarios();
+ propietario.value=data.id;
+ mostrarWhatsappPropietario();
 }
 
 function estadoInfo(v){
@@ -663,7 +719,7 @@ async function saveCam(){
  if(!estado.value){ estado.classList.add('is-invalid-field'); faltantes.push('Estado de la cámara'); }
  if(!lat.value||isNaN(parseFloat(lat.value))){ lat.classList.add('is-invalid-field'); document.getElementById('btnSeleccionarMapa').classList.add('is-invalid-field'); faltantes.push('Ubicación en el mapa'); }
  if(!lng.value||isNaN(parseFloat(lng.value))){ lng.classList.add('is-invalid-field'); document.getElementById('btnSeleccionarMapa').classList.add('is-invalid-field'); }
- if(!propietario.value.trim()){ propietario.classList.add('is-invalid-field'); faltantes.push('Propietario'); }
+ if(!propietario.value){ propietario.classList.add('is-invalid-field'); faltantes.push('Propietario'); }
  let tieneFotoActual=!!(cams.find(x=>x.id==camId.value)?.foto);
  if(!foto.files[0] && !tieneFotoActual){ faltantes.push('Foto de la cámara'); }
  if(faltantes.length){ showToast('Falta: '+faltantes.join(', ')); return; }
@@ -682,8 +738,7 @@ async function saveCam(){
    lng:parseFloat(lng.value),
    maps:maps.value,
    foto:img,
-   propietario:propietario.value,
-   whatsapp:whatsapp.value,
+   propietario_id:propietario.value,
    estacion_id:viewingStationId
   };
   let error, esNuevo=!camId.value;
@@ -863,7 +918,7 @@ ${c.cabina?'<span class="info-badge"><i class="bi bi-pc-display"></i>'+c.cabina+
 <button class="btn btn-sm btn-primary" onclick="focusCam('${c.id}')" title="Ver en mapa"><i class="bi bi-geo-alt-fill"></i></button>
 <button class="btn btn-sm btn-outline-primary" onclick="comoLlegar('${c.id}')" title="Cómo llegar"><i class="bi bi-signpost-2-fill"></i></button>
 <button class="btn btn-sm btn-info text-white" onclick="viewDetails('${c.id}')" title="Detalles"><i class="bi bi-eye-fill"></i></button>
-<a class="btn btn-sm btn-success" target="_blank" href="https://wa.me/${c.whatsapp||''}" title="WhatsApp"><i class="bi bi-whatsapp"></i></a>
+<a class="btn btn-sm btn-success" target="_blank" href="https://wa.me/${propietariosById[c.propietario_id]?.whatsapp||''}" title="WhatsApp"><i class="bi bi-whatsapp"></i></a>
 <button class="btn btn-sm btn-warning" onclick="editCam('${c.id}')" title="Editar"><i class="bi bi-pencil-square"></i></button>
 <button class="btn btn-sm btn-danger" onclick="delCam('${c.id}')" title="Eliminar"><i class="bi bi-trash-fill"></i></button>
 </div>`;
@@ -900,11 +955,11 @@ function viewDetails(id){
  <tr><th>Cabina</th><td>${c.cabina||''}</td></tr>
  <tr><th>Latitud</th><td>${c.lat||''}</td></tr>
  <tr><th>Longitud</th><td>${c.lng||''}</td></tr>
- <tr><th>Propietario</th><td>${c.propietario||''}</td></tr>
- <tr><th>WhatsApp</th><td>${c.whatsapp||''}</td></tr>
+ <tr><th>Propietario</th><td>${propietariosById[c.propietario_id]?.nombre||''}</td></tr>
+ <tr><th>WhatsApp</th><td>${propietariosById[c.propietario_id]?.whatsapp||''}</td></tr>
  </table>
  <div class="d-flex gap-2 flex-wrap">
-<a class="btn btn-success" target="_blank" href="https://wa.me/${c.whatsapp||''}"><i class="bi bi-whatsapp me-1"></i>Abrir WhatsApp</a>
+<a class="btn btn-success" target="_blank" href="https://wa.me/${propietariosById[c.propietario_id]?.whatsapp||''}"><i class="bi bi-whatsapp me-1"></i>Abrir WhatsApp</a>
 <a class="btn btn-primary" target="_blank" href="${c.maps||'#'}"><i class="bi bi-geo-alt-fill me-1"></i>Abrir Google Maps</a>
 <button class="btn btn-outline-primary" onclick="comoLlegar('${c.id}')"><i class="bi bi-signpost-2-fill me-1"></i>Cómo llegar</button>
 </div>
@@ -917,7 +972,7 @@ function datosExport(){
  return cams.map(c=>({
   Nombre:c.nombre||'', Direccion:c.direccion||'', TV:territoriosById[c.territorio_id]?.nombre||'', Tipo:c.tipo||'',
   Estado:estadoInfo(c.estado)?.label||'', Cabina:c.cabina||'',
-  Latitud:c.lat||'', Longitud:c.lng||'', Propietario:c.propietario||'', WhatsApp:c.whatsapp||''
+  Latitud:c.lat||'', Longitud:c.lng||'', Propietario:propietariosById[c.propietario_id]?.nombre||'', WhatsApp:propietariosById[c.propietario_id]?.whatsapp||''
  }));
 }
 
@@ -1002,6 +1057,67 @@ async function deleteTerritorio(id){
  await loadTerritorios(); await loadCams();
  renderTerritoriosList(); populateFilterTV(); render(); renderStats();
  alert('Territorio eliminado.');
+}
+
+/* ==================== GESTIÓN DE PROPIETARIOS ==================== */
+function openPropietariosAdmin(){
+ if(!viewingStationId){ alert('Selecciona una estación primero'); return; }
+ renderPropietariosList();
+ new bootstrap.Modal(document.getElementById('propietariosModal')).show();
+}
+
+function renderPropietariosList(){
+ let el=document.getElementById('propietariosList');
+ if(!propietarios.length){ el.innerHTML='<div class="text-muted small">Aún no tienes propietarios creados.</div>'; return; }
+ el.innerHTML=propietarios.map(p=>{
+  let n=cams.filter(c=>c.propietario_id===p.id).length;
+  return '<div class="station-row"><div class="st-name">'+p.nombre+'<div class="small text-muted">'+(p.whatsapp?'WhatsApp: '+p.whatsapp+' · ':'')+n+' cámara(s)</div></div>'+
+  '<button class="btn btn-sm btn-outline-secondary me-1" onclick="editPropietario(\''+p.id+'\')"><i class="bi bi-pencil"></i></button>'+
+  '<button class="btn btn-sm btn-outline-danger" onclick="deletePropietario(\''+p.id+'\')"><i class="bi bi-trash"></i></button></div>';
+ }).join('');
+}
+
+async function addPropietario(){
+ let nombre=document.getElementById('newPropietarioName').value.trim();
+ let wpp=document.getElementById('newPropietarioWpp').value.trim();
+ if(!nombre){ alert('Escribe el nombre del propietario.'); return; }
+ const {error}=await sb.from('propietarios').insert({nombre,whatsapp:wpp||null,estacion_id:viewingStationId});
+ if(error){ alert('Error: '+error.message); return; }
+ document.getElementById('newPropietarioName').value='';
+ document.getElementById('newPropietarioWpp').value='';
+ await loadPropietarios();
+ renderPropietariosList();
+ alert('Propietario agregado.');
+}
+
+async function editPropietario(id){
+ let p=propietarios.find(x=>x.id===id);
+ if(!p) return;
+ let nuevoNombre=prompt('Nuevo nombre para este propietario:',p.nombre);
+ if(nuevoNombre===null) return;
+ nuevoNombre=nuevoNombre.trim();
+ if(!nuevoNombre){ alert('El nombre no puede quedar vacío.'); return; }
+ let nuevoWpp=prompt('WhatsApp de este propietario (déjalo vacío si no tiene):',p.whatsapp||'');
+ if(nuevoWpp===null) return;
+ nuevoWpp=nuevoWpp.trim();
+ const {error}=await sb.from('propietarios').update({nombre:nuevoNombre,whatsapp:nuevoWpp||null}).eq('id',id);
+ if(error){ alert('Error: '+error.message); return; }
+ await loadPropietarios(); await loadCams();
+ renderPropietariosList(); render(); renderStats();
+ alert('Propietario actualizado. Sus cámaras ya muestran los datos nuevos.');
+}
+
+async function deletePropietario(id){
+ let n=cams.filter(c=>c.propietario_id===id).length;
+ let msg=n>0
+  ? '¿Eliminar este propietario? '+n+' cámara(s) se quedarán sin propietario asignado y tendrás que reasignarlas.'
+  : '¿Eliminar este propietario?';
+ if(!confirm(msg)) return;
+ const {error}=await sb.from('propietarios').delete().eq('id',id);
+ if(error){ alert('Error: '+error.message); return; }
+ await loadPropietarios(); await loadCams();
+ renderPropietariosList(); render(); renderStats();
+ alert('Propietario eliminado.');
 }
 
 /* ==================== REPORTE DE TEXTO POR TV ==================== */
