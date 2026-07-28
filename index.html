@@ -183,9 +183,11 @@ body.dark .info-badge{background:#242a33; color:#b7c0cc;}
 <div id="loginScreen">
 <div class="login-card">
 <div class="brand"><i class="bi bi-camera-video-fill"></i> Sistema de Cámaras</div>
-<input id="loginEmail" type="email" class="form-control mb-2" placeholder="Correo">
-<input id="loginPass" type="password" class="form-control mb-2" placeholder="Contraseña">
-<button class="btn btn-primary w-100" id="loginBtn" onclick="doLogin()">Ingresar</button>
+<form id="loginForm" onsubmit="event.preventDefault(); doLogin();" autocomplete="on">
+<input id="loginEmail" type="email" name="username" autocomplete="username" class="form-control mb-2" placeholder="Correo">
+<input id="loginPass" type="password" name="password" autocomplete="current-password" class="form-control mb-2" placeholder="Contraseña">
+<button type="submit" class="btn btn-primary w-100" id="loginBtn">Ingresar</button>
+</form>
 <div class="login-error" id="loginError"></div>
 </div>
 </div>
@@ -436,6 +438,7 @@ async function doLogin(){
  const {data,error}=await sb.auth.signInWithPassword({email,password:pass});
  btn.disabled=false; btn.textContent='Ingresar';
  if(error){ err.textContent='Correo o contraseña incorrectos'; return; }
+ localStorage.setItem('atlas_last_email',email);
  let ok=await resolveRole();
  if(!ok){
   err.textContent='Esta cuenta no está vinculada a ninguna estación. Contacta al administrador.';
@@ -720,20 +723,28 @@ function toggleTipoOtro(){
 
 let quickAddContext=null;
 
+let camModalPendingReturn=false;
+
 function onCambioTerritorio(){
  if(tv.value!=='__new__'){ return; }
  tv.value='';
  quickAddContext='tv';
- prepararFormTerritorio(null);
- new bootstrap.Modal(document.getElementById('territorioFormModal')).show();
+ cerrarModal('camModal',()=>{
+  camModalPendingReturn=true;
+  prepararFormTerritorio(null);
+  new bootstrap.Modal(document.getElementById('territorioFormModal')).show();
+ });
 }
 
 function onCambioPropietario(){
  if(propietario.value!=='__new__'){ mostrarWhatsappPropietario(); return; }
  propietario.value='';
  quickAddContext='propietario';
- prepararFormPropietario(null);
- new bootstrap.Modal(document.getElementById('propietarioFormModal')).show();
+ cerrarModal('camModal',()=>{
+  camModalPendingReturn=true;
+  prepararFormPropietario(null);
+  new bootstrap.Modal(document.getElementById('propietarioFormModal')).show();
+ });
 }
 
 function estadoInfo(v){
@@ -1105,6 +1116,9 @@ document.getElementById('territorioFormModal').addEventListener('hidden.bs.modal
   territorioAdminFlow=false;
   renderTerritoriosList();
   new bootstrap.Modal(document.getElementById('territoriosModal')).show();
+ }else if(camModalPendingReturn){
+  camModalPendingReturn=false;
+  modal.show();
  }
 });
 
@@ -1136,10 +1150,12 @@ async function guardarTerritorio(){
  let nombre=document.getElementById('editTerritorioNombre').value.trim();
  if(!nombre){ showToast('Escribe el nombre del territorio'); return; }
  if(!viewingStationId){ showToast('No hay estación seleccionada'); return; }
+ let duplicado=territorios.some(t=>t.id!==id && t.nombre.trim().toLowerCase()===nombre.toLowerCase());
+ if(duplicado){ showToast('Ya existe un territorio con ese nombre'); return; }
  let error,data;
  if(id){ ({error}=await sb.from('territorios').update({nombre}).eq('id',id)); }
  else{ ({data,error}=await sb.from('territorios').insert({nombre,estacion_id:viewingStationId}).select().single()); }
- if(error){ showToast('Error: '+error.message); return; }
+ if(error){ showToast(error.code==='23505'?'Ya existe un territorio con ese nombre':'Error: '+error.message); return; }
  await loadTerritorios(); await loadCams();
  if(!id && quickAddContext==='tv'){ tv.value=data.id; quickAddContext=null; }
  populateFilterTV(); render(); renderStats();
@@ -1187,6 +1203,9 @@ document.getElementById('propietarioFormModal').addEventListener('hidden.bs.moda
   propietarioAdminFlow=false;
   renderPropietariosList();
   new bootstrap.Modal(document.getElementById('propietariosModal')).show();
+ }else if(camModalPendingReturn){
+  camModalPendingReturn=false;
+  modal.show();
  }
 });
 
@@ -1220,10 +1239,12 @@ async function guardarPropietario(){
  let wpp=document.getElementById('editPropietarioWpp').value.trim();
  if(!nombre){ showToast('Escribe el nombre del propietario'); return; }
  if(!viewingStationId){ showToast('No hay estación seleccionada'); return; }
+ let duplicado=propietarios.some(p=>p.id!==id && p.nombre.trim().toLowerCase()===nombre.toLowerCase());
+ if(duplicado){ showToast('Ya existe un propietario con ese nombre'); return; }
  let error,data;
  if(id){ ({error}=await sb.from('propietarios').update({nombre,whatsapp:wpp||null}).eq('id',id)); }
  else{ ({data,error}=await sb.from('propietarios').insert({nombre,whatsapp:wpp||null,estacion_id:viewingStationId}).select().single()); }
- if(error){ showToast('Error: '+error.message); return; }
+ if(error){ showToast(error.code==='23505'?'Ya existe un propietario con ese nombre':'Error: '+error.message); return; }
  await loadPropietarios(); await loadCams();
  if(!id && quickAddContext==='propietario'){ propietario.value=data.id; quickAddContext=null; mostrarWhatsappPropietario(); }
  render(); renderStats();
@@ -1287,6 +1308,8 @@ function copiarReporte(){
 }
 
 /* ==================== INICIO ==================== */
+let ultimoCorreo=localStorage.getItem('atlas_last_email');
+if(ultimoCorreo) document.getElementById('loginEmail').value=ultimoCorreo;
 (async function init(){
  const {data:{session}}=await sb.auth.getSession();
  if(session){
