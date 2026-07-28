@@ -333,7 +333,7 @@ body.dark .info-badge{background:#242a33; color:#b7c0cc;}
 <div class="modal-body">
 <div id="propietariosList"></div>
 <hr>
-<button class="btn btn-primary w-100" onclick="quickAddContext=null;abrirFormPropietario()"><i class="bi bi-plus-lg me-1"></i>Nuevo propietario</button>
+<button class="btn btn-primary w-100" onclick="nuevoPropietarioAdmin()"><i class="bi bi-plus-lg me-1"></i>Nuevo propietario</button>
 </div>
 <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button></div>
 </div></div></div>
@@ -356,7 +356,7 @@ body.dark .info-badge{background:#242a33; color:#b7c0cc;}
 <div class="modal-body">
 <div id="territoriosList"></div>
 <hr>
-<button class="btn btn-primary w-100" onclick="quickAddContext=null;abrirFormTerritorio()"><i class="bi bi-plus-lg me-1"></i>Nuevo territorio</button>
+<button class="btn btn-primary w-100" onclick="nuevoTerritorioAdmin()"><i class="bi bi-plus-lg me-1"></i>Nuevo territorio</button>
 </div>
 <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button></div>
 </div></div></div>
@@ -389,7 +389,7 @@ body.dark .info-badge{background:#242a33; color:#b7c0cc;}
 <div class="modal-body">
 <div id="stationsList"></div>
 <hr>
-<button class="btn btn-primary w-100" onclick="abrirFormEstacion()"><i class="bi bi-plus-lg me-1"></i>Nueva estación</button>
+<button class="btn btn-primary w-100" onclick="nuevaEstacionAdmin()"><i class="bi bi-plus-lg me-1"></i>Nueva estación</button>
 </div>
 <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button></div>
 </div></div></div>
@@ -505,18 +505,43 @@ async function renderStationsList(){
  el.innerHTML=stations.map(s=>{
   let n=(allCams||[]).filter(c=>c.estacion_id===s.id).length;
   return '<div class="station-row"><div class="st-name">'+s.nombre+'<div class="small text-muted">'+n+' cámara(s)</div></div>'+
-  '<button class="btn btn-sm btn-outline-secondary me-1" onclick="abrirFormEstacion(\''+s.id+'\')"><i class="bi bi-pencil"></i></button>'+
+  '<button class="btn btn-sm btn-outline-secondary me-1" onclick="editarEstacionAdmin(\''+s.id+'\')"><i class="bi bi-pencil"></i></button>'+
   '<button class="btn btn-sm btn-outline-danger" onclick="deleteStation(\''+s.id+'\')"><i class="bi bi-trash"></i></button></div>';
  }).join('');
 }
 
-function abrirFormEstacion(id){
+let estacionAdminFlow=false;
+document.getElementById('estacionFormModal').addEventListener('hidden.bs.modal',()=>{
+ if(estacionAdminFlow){
+  estacionAdminFlow=false;
+  renderStationsList().then(()=>{
+   new bootstrap.Modal(document.getElementById('stationsModal')).show();
+  });
+ }
+});
+
+function prepararFormEstacion(id){
  let s=id?stations.find(x=>x.id===id):null;
  document.getElementById('estacionFormTitulo').textContent=s?'Editar estación':'Nueva estación';
  document.getElementById('editStationId').value=s?s.id:'';
  document.getElementById('editStationName').value=s?s.nombre:'';
  document.getElementById('editStationUid').value=s?s.user_id:'';
- new bootstrap.Modal(document.getElementById('estacionFormModal')).show();
+}
+
+function nuevaEstacionAdmin(){
+ cerrarModal('stationsModal',()=>{
+  estacionAdminFlow=true;
+  prepararFormEstacion(null);
+  new bootstrap.Modal(document.getElementById('estacionFormModal')).show();
+ });
+}
+
+function editarEstacionAdmin(id){
+ cerrarModal('stationsModal',()=>{
+  estacionAdminFlow=true;
+  prepararFormEstacion(id);
+  new bootstrap.Modal(document.getElementById('estacionFormModal')).show();
+ });
 }
 
 async function guardarEstacion(){
@@ -530,20 +555,23 @@ async function guardarEstacion(){
  if(error){ showToast('Error: '+error.message); return; }
  let {data:allStations}=await sb.from('estaciones').select('*').order('nombre');
  stations=allStations||[];
- renderStationsList(); renderStationPill();
+ renderStationPill();
  if(!viewingStationId&&stations[0]) viewingStationId=stations[0].id;
  bootstrap.Modal.getInstance(document.getElementById('estacionFormModal')).hide();
  showToast(id?'Estación actualizada':'Estación vinculada correctamente');
 }
 
 function deleteStation(id){
- confirmarEliminar('¿Eliminar esta estación? Sus cámaras también se eliminarán.',async()=>{
-  const {error}=await sb.from('estaciones').delete().eq('id',id);
-  if(error){ showToast('Error: '+error.message); return; }
-  stations=stations.filter(s=>s.id!==id);
-  if(viewingStationId===id) viewingStationId=stations[0]?stations[0].id:null;
-  renderStationsList(); renderStationPill(); await loadCams(); render(); renderStats();
-  showToast('Estación eliminada');
+ cerrarModal('stationsModal',()=>{
+  confirmarEliminar('¿Eliminar esta estación? Sus cámaras también se eliminarán.',async()=>{
+   const {error}=await sb.from('estaciones').delete().eq('id',id);
+   if(error){ showToast('Error: '+error.message); return; }
+   stations=stations.filter(s=>s.id!==id);
+   if(viewingStationId===id) viewingStationId=stations[0]?stations[0].id:null;
+   renderStationPill(); await loadCams(); render(); renderStats();
+   await renderStationsList();
+   showToast('Estación eliminada');
+  },'stationsModal');
  });
 }
 
@@ -621,12 +649,33 @@ map.addLayer(clusterGroup);
 
 let markers=[];let markersById={};let deleteId=null;const toast=new bootstrap.Toast(document.getElementById('liveToast'),{delay:3500}); const detailsModal=new bootstrap.Modal(document.getElementById('detailsModal'));const deleteModal=new bootstrap.Modal(document.getElementById('deleteModal'));function showToast(t){toast.hide();toastMsg.textContent=t;toast.show();}
 const genericDeleteModal=new bootstrap.Modal(document.getElementById('genericDeleteModal'));
-function confirmarEliminar(mensaje,callback){
+
+/* Cierra un modal (si está abierto) y solo cuando terminó de cerrarse del todo, ejecuta "luego" */
+function cerrarModal(modalId,luego){
+ const el=document.getElementById(modalId);
+ if(!el.classList.contains('show')){ luego(); return; }
+ el.addEventListener('hidden.bs.modal',function handler(){
+  el.removeEventListener('hidden.bs.modal',handler);
+  luego();
+ },{once:true});
+ bootstrap.Modal.getInstance(el).hide();
+}
+
+/* Muestra el modal genérico de confirmar eliminación. Si se indica returnToModalId,
+   al terminar (se confirme o se cancele) reabre ese modal automáticamente. */
+function confirmarEliminar(mensaje,callback,returnToModalId){
  document.getElementById('genericDeleteText').innerHTML=mensaje;
- document.getElementById('genericDeleteConfirmBtn').onclick=async()=>{
+ let confirmado=false;
+ document.getElementById('genericDeleteConfirmBtn').onclick=()=>{
+  confirmado=true;
   genericDeleteModal.hide();
-  await callback();
  };
+ const modalEl=document.getElementById('genericDeleteModal');
+ modalEl.addEventListener('hidden.bs.modal',async function handler(){
+  modalEl.removeEventListener('hidden.bs.modal',handler);
+  if(confirmado) await callback();
+  if(returnToModalId) new bootstrap.Modal(document.getElementById(returnToModalId)).show();
+ },{once:true});
  genericDeleteModal.show();
 }
 let selecting=false,tempMarker=null,pickerMap=null,pickerMarker=null,selectedLatLng=null; const pickerModal=new bootstrap.Modal(document.getElementById('mapPickerModal'));
@@ -675,14 +724,16 @@ function onCambioTerritorio(){
  if(tv.value!=='__new__'){ return; }
  tv.value='';
  quickAddContext='tv';
- abrirFormTerritorio();
+ prepararFormTerritorio(null);
+ new bootstrap.Modal(document.getElementById('territorioFormModal')).show();
 }
 
 function onCambioPropietario(){
  if(propietario.value!=='__new__'){ mostrarWhatsappPropietario(); return; }
  propietario.value='';
  quickAddContext='propietario';
- abrirFormPropietario();
+ prepararFormPropietario(null);
+ new bootstrap.Modal(document.getElementById('propietarioFormModal')).show();
 }
 
 function estadoInfo(v){
@@ -1043,18 +1094,41 @@ function renderTerritoriosList(){
  el.innerHTML=territorios.map(t=>{
   let n=cams.filter(c=>c.territorio_id===t.id).length;
   return '<div class="station-row"><div class="st-name">'+t.nombre+'<div class="small text-muted">'+n+' cámara(s)</div></div>'+
-  '<button class="btn btn-sm btn-outline-secondary me-1" onclick="abrirFormTerritorio(\''+t.id+'\')"><i class="bi bi-pencil"></i></button>'+
+  '<button class="btn btn-sm btn-outline-secondary me-1" onclick="editarTerritorioAdmin(\''+t.id+'\')"><i class="bi bi-pencil"></i></button>'+
   '<button class="btn btn-sm btn-outline-danger" onclick="deleteTerritorio(\''+t.id+'\')"><i class="bi bi-trash"></i></button></div>';
  }).join('');
 }
 
-function abrirFormTerritorio(id){
- if(id) quickAddContext=null;
+let territorioAdminFlow=false;
+document.getElementById('territorioFormModal').addEventListener('hidden.bs.modal',()=>{
+ if(territorioAdminFlow){
+  territorioAdminFlow=false;
+  renderTerritoriosList();
+  new bootstrap.Modal(document.getElementById('territoriosModal')).show();
+ }
+});
+
+function prepararFormTerritorio(id){
  let t=id?territorios.find(x=>x.id===id):null;
  document.getElementById('territorioFormTitulo').textContent=t?'Editar territorio':'Nuevo territorio';
  document.getElementById('editTerritorioId').value=t?t.id:'';
  document.getElementById('editTerritorioNombre').value=t?t.nombre:'';
- new bootstrap.Modal(document.getElementById('territorioFormModal')).show();
+}
+
+function nuevoTerritorioAdmin(){
+ cerrarModal('territoriosModal',()=>{
+  quickAddContext=null; territorioAdminFlow=true;
+  prepararFormTerritorio(null);
+  new bootstrap.Modal(document.getElementById('territorioFormModal')).show();
+ });
+}
+
+function editarTerritorioAdmin(id){
+ cerrarModal('territoriosModal',()=>{
+  quickAddContext=null; territorioAdminFlow=true;
+  prepararFormTerritorio(id);
+  new bootstrap.Modal(document.getElementById('territorioFormModal')).show();
+ });
 }
 
 async function guardarTerritorio(){
@@ -1068,7 +1142,7 @@ async function guardarTerritorio(){
  if(error){ showToast('Error: '+error.message); return; }
  await loadTerritorios(); await loadCams();
  if(!id && quickAddContext==='tv'){ tv.value=data.id; quickAddContext=null; }
- renderTerritoriosList(); populateFilterTV(); render(); renderStats();
+ populateFilterTV(); render(); renderStats();
  bootstrap.Modal.getInstance(document.getElementById('territorioFormModal')).hide();
  showToast(id?'Territorio actualizado':'Territorio agregado');
 }
@@ -1078,12 +1152,14 @@ function deleteTerritorio(id){
  let msg=n>0
   ? '¿Eliminar este territorio? '+n+' cámara(s) se quedarán sin territorio asignado y tendrás que reasignarlas.'
   : '¿Eliminar este territorio?';
- confirmarEliminar(msg,async()=>{
-  const {error}=await sb.from('territorios').delete().eq('id',id);
-  if(error){ showToast('Error: '+error.message); return; }
-  await loadTerritorios(); await loadCams();
-  renderTerritoriosList(); populateFilterTV(); render(); renderStats();
-  showToast('Territorio eliminado');
+ cerrarModal('territoriosModal',()=>{
+  confirmarEliminar(msg,async()=>{
+   const {error}=await sb.from('territorios').delete().eq('id',id);
+   if(error){ showToast('Error: '+error.message); return; }
+   await loadTerritorios(); await loadCams();
+   renderTerritoriosList(); populateFilterTV(); render(); renderStats();
+   showToast('Territorio eliminado');
+  },'territoriosModal');
  });
 }
 
@@ -1100,19 +1176,42 @@ function renderPropietariosList(){
  el.innerHTML=propietarios.map(p=>{
   let n=cams.filter(c=>c.propietario_id===p.id).length;
   return '<div class="station-row"><div class="st-name">'+p.nombre+'<div class="small text-muted">'+(p.whatsapp?'WhatsApp: '+p.whatsapp+' · ':'')+n+' cámara(s)</div></div>'+
-  '<button class="btn btn-sm btn-outline-secondary me-1" onclick="abrirFormPropietario(\''+p.id+'\')"><i class="bi bi-pencil"></i></button>'+
+  '<button class="btn btn-sm btn-outline-secondary me-1" onclick="editarPropietarioAdmin(\''+p.id+'\')"><i class="bi bi-pencil"></i></button>'+
   '<button class="btn btn-sm btn-outline-danger" onclick="deletePropietario(\''+p.id+'\')"><i class="bi bi-trash"></i></button></div>';
  }).join('');
 }
 
-function abrirFormPropietario(id){
- if(id) quickAddContext=null;
+let propietarioAdminFlow=false;
+document.getElementById('propietarioFormModal').addEventListener('hidden.bs.modal',()=>{
+ if(propietarioAdminFlow){
+  propietarioAdminFlow=false;
+  renderPropietariosList();
+  new bootstrap.Modal(document.getElementById('propietariosModal')).show();
+ }
+});
+
+function prepararFormPropietario(id){
  let p=id?propietarios.find(x=>x.id===id):null;
  document.getElementById('propietarioFormTitulo').textContent=p?'Editar propietario':'Nuevo propietario';
  document.getElementById('editPropietarioId').value=p?p.id:'';
  document.getElementById('editPropietarioNombre').value=p?p.nombre:'';
  document.getElementById('editPropietarioWpp').value=p?(p.whatsapp||''):'';
- new bootstrap.Modal(document.getElementById('propietarioFormModal')).show();
+}
+
+function nuevoPropietarioAdmin(){
+ cerrarModal('propietariosModal',()=>{
+  quickAddContext=null; propietarioAdminFlow=true;
+  prepararFormPropietario(null);
+  new bootstrap.Modal(document.getElementById('propietarioFormModal')).show();
+ });
+}
+
+function editarPropietarioAdmin(id){
+ cerrarModal('propietariosModal',()=>{
+  quickAddContext=null; propietarioAdminFlow=true;
+  prepararFormPropietario(id);
+  new bootstrap.Modal(document.getElementById('propietarioFormModal')).show();
+ });
 }
 
 async function guardarPropietario(){
@@ -1127,7 +1226,7 @@ async function guardarPropietario(){
  if(error){ showToast('Error: '+error.message); return; }
  await loadPropietarios(); await loadCams();
  if(!id && quickAddContext==='propietario'){ propietario.value=data.id; quickAddContext=null; mostrarWhatsappPropietario(); }
- renderPropietariosList(); render(); renderStats();
+ render(); renderStats();
  bootstrap.Modal.getInstance(document.getElementById('propietarioFormModal')).hide();
  showToast(id?'Propietario actualizado':'Propietario agregado');
 }
@@ -1137,12 +1236,14 @@ function deletePropietario(id){
  let msg=n>0
   ? '¿Eliminar este propietario? '+n+' cámara(s) se quedarán sin propietario asignado y tendrás que reasignarlas.'
   : '¿Eliminar este propietario?';
- confirmarEliminar(msg,async()=>{
-  const {error}=await sb.from('propietarios').delete().eq('id',id);
-  if(error){ showToast('Error: '+error.message); return; }
-  await loadPropietarios(); await loadCams();
-  renderPropietariosList(); render(); renderStats();
-  showToast('Propietario eliminado');
+ cerrarModal('propietariosModal',()=>{
+  confirmarEliminar(msg,async()=>{
+   const {error}=await sb.from('propietarios').delete().eq('id',id);
+   if(error){ showToast('Error: '+error.message); return; }
+   await loadPropietarios(); await loadCams();
+   renderPropietariosList(); render(); renderStats();
+   showToast('Propietario eliminado');
+  },'propietariosModal');
  });
 }
 
