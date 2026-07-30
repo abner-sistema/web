@@ -245,6 +245,7 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
 <button class="navicon active" id="navMapa" onclick="switchView('mapa')" title="Mapa y Cámaras"><i class="bi bi-map-fill"></i></button>
 <button class="navicon" id="navTerritorios" onclick="switchView('territorios')" title="Territorios"><i class="bi bi-geo-alt-fill"></i></button>
 <button class="navicon" id="navPropietarios" onclick="switchView('propietarios')" title="Propietarios"><i class="bi bi-person-lines-fill"></i></button>
+<button class="navicon" id="navEstadisticas" onclick="switchView('estadisticas')" title="Estadísticas"><i class="bi bi-bar-chart-fill"></i></button>
 <button class="navicon" onclick="abrirReporte()" title="Reporte de texto"><i class="bi bi-chat-square-text"></i></button>
 <button class="navicon" onclick="exportExcel()" title="Exportar Excel"><i class="bi bi-file-earmark-excel"></i></button>
 <button class="navicon" onclick="exportPDF()" title="Exportar PDF"><i class="bi bi-file-earmark-pdf"></i></button>
@@ -356,6 +357,44 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
 </div>
 </div>
 
+<!-- VISTA COMPLETA DEDICADA: ESTADÍSTICAS -->
+<div id="viewEstadisticas" class="d-none">
+  <div class="catalog-card">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+      <div>
+        <h4 class="m-0 fw-bold"><i class="bi bi-bar-chart-fill text-purple me-2"></i>Dashboard de Estadísticas</h4>
+        <p class="text-muted small m-0">Análisis gráfico de las cámaras registradas en esta estación</p>
+      </div>
+    </div>
+    
+    <div class="row g-4">
+      <!-- Barras: Territorios -->
+      <div class="col-md-6">
+        <div class="card p-3 h-100" style="background: var(--panel2); border-color: var(--border);">
+          <h6 class="text-center text-muted mb-3 fw-bold">Cámaras por Territorio</h6>
+          <canvas id="chartTerritorios"></canvas>
+        </div>
+      </div>
+      <!-- Barras: Propietarios -->
+      <div class="col-md-6">
+        <div class="card p-3 h-100" style="background: var(--panel2); border-color: var(--border);">
+          <h6 class="text-center text-muted mb-3 fw-bold">Cámaras por Propietario</h6>
+          <canvas id="chartPropietarios"></canvas>
+        </div>
+      </div>
+      <!-- Pastel: Tipos -->
+      <div class="col-md-6 mx-auto mt-4">
+        <div class="card p-3 h-100" style="background: var(--panel2); border-color: var(--border);">
+          <h6 class="text-center text-muted mb-3 fw-bold">Tipos de Cámara</h6>
+          <div style="height: 300px; position: relative;">
+            <canvas id="chartTipos"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 </div>
 </div>
 
@@ -364,6 +403,7 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
 <button class="mtab active" id="mtabMapa" onclick="switchView('mapa')"><i class="bi bi-map-fill"></i>Mapa</button>
 <button class="mtab" id="mtabTerritorios" onclick="switchView('territorios')"><i class="bi bi-geo-alt-fill"></i>Territ.</button>
 <button class="mtab" id="mtabPropietarios" onclick="switchView('propietarios')"><i class="bi bi-person-lines-fill"></i>Propiet.</button>
+<button class="mtab" id="mtabEstadisticas" onclick="switchView('estadisticas')"><i class="bi bi-bar-chart-fill"></i>Estad.</button>
 <button class="mtab" onclick="abrirMas()"><i class="bi bi-grid-3x3-gap-fill"></i>Más</button>
 </div>
 
@@ -509,6 +549,7 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 /* ==================== SUPABASE ==================== */
 const SUPABASE_URL='https://ylweeiytonskodzdkoqa.supabase.co';
@@ -567,14 +608,17 @@ function switchView(viewName){
  document.getElementById('viewMainMapa').classList.toggle('d-none', viewName !== 'mapa');
  document.getElementById('viewTerritorios').classList.toggle('d-none', viewName !== 'territorios');
  document.getElementById('viewPropietarios').classList.toggle('d-none', viewName !== 'propietarios');
+ document.getElementById('viewEstadisticas')?.classList.toggle('d-none', viewName !== 'estadisticas');
 
  document.getElementById('navMapa').classList.toggle('active', viewName === 'mapa');
  document.getElementById('navTerritorios').classList.toggle('active', viewName === 'territorios');
  document.getElementById('navPropietarios').classList.toggle('active', viewName === 'propietarios');
+ document.getElementById('navEstadisticas')?.classList.toggle('active', viewName === 'estadisticas');
 
  document.getElementById('mtabMapa')?.classList.toggle('active', viewName === 'mapa');
  document.getElementById('mtabTerritorios')?.classList.toggle('active', viewName === 'territorios');
  document.getElementById('mtabPropietarios')?.classList.toggle('active', viewName === 'propietarios');
+ document.getElementById('mtabEstadisticas')?.classList.toggle('active', viewName === 'estadisticas');
 
  const titleEl = document.getElementById('topstripTitle');
  if(viewName === 'mapa'){
@@ -585,6 +629,9 @@ function switchView(viewName){
  } else if(viewName === 'propietarios'){
    titleEl.innerHTML = `<i class="bi bi-person-lines-fill text-cyan"></i> Propietarios <span class="count-pill">${propietarios.length}</span>`;
    renderPropietariosTable();
+ } else if(viewName === 'estadisticas'){
+   titleEl.innerHTML = `<i class="bi bi-bar-chart-fill text-purple"></i> Estadísticas`;
+   renderCharts();
  }
 
  if(viewName === 'mapa'){
@@ -660,6 +707,7 @@ async function cambiarEstacionVista(id){
  renderFilterChips(); await loadTerritorios(); await loadPropietarios(); await loadCams(); populateFilterTV(); render(); renderStats();
  if(activeView==='territorios') renderTerritoriosTable();
  if(activeView==='propietarios') renderPropietariosTable();
+ if(activeView==='estadisticas') renderCharts();
 }
 
 async function enterApp(){
@@ -1335,7 +1383,8 @@ function render(){
  let countPill = document.getElementById('countPill');
  if(countPill) countPill.textContent=propias.length;
  let data=propias.filter(c=>
-  (JSON.stringify(c)+' '+(territoriosById[c.territorio_id]?.nombre||'')).toLowerCase().includes(q) &&
+  // ---- AQUÍ SE CORRIGIÓ EL ERROR CONCATENANDO EL NOMBRE DEL PROPIETARIO ----
+  (JSON.stringify(c)+' '+(territoriosById[c.territorio_id]?.nombre||'')+' '+(propietariosById[c.propietario_id]?.nombre||'')).toLowerCase().includes(q) &&
   (filtroEstado===''||c.estado===filtroEstado) &&
   (filtroTV===''||c.territorio_id===filtroTV)
  );
@@ -1498,6 +1547,95 @@ function copiarReporte(){
 
 function abrirMas(){
  new bootstrap.Modal(document.getElementById('masModal')).show();
+}
+
+/* ==================== GRÁFICAS (CHART.JS) ==================== */
+let chartTerritoriosInstance = null;
+let chartPropietariosInstance = null;
+let chartTiposInstance = null;
+
+function renderCharts() {
+  if (!document.getElementById('chartTerritorios')) return;
+
+  // 1. Procesar y agrupar los datos
+  let countTerritorios = {};
+  let countPropietarios = {};
+  let countTipos = {};
+
+  cams.forEach(c => {
+    // Agrupar por Territorio
+    let tv = territoriosById[c.territorio_id]?.nombre || 'Sin TV';
+    countTerritorios[tv] = (countTerritorios[tv] || 0) + 1;
+
+    // Agrupar por Propietario
+    let prop = propietariosById[c.propietario_id]?.nombre || 'Sin Propietario';
+    countPropietarios[prop] = (countPropietarios[prop] || 0) + 1;
+
+    // Agrupar por Tipo de cámara
+    let tipo = c.tipo || 'No especificado';
+    countTipos[tipo] = (countTipos[tipo] || 0) + 1;
+  });
+
+  // Configuración de colores adaptada al Tema (Claro/Oscuro)
+  const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+  Chart.defaults.color = isDark ? '#eef0f5' : '#1e293b';
+  Chart.defaults.borderColor = isDark ? '#2a2440' : '#e2e8f0';
+  const pieBorderColor = isDark ? '#161221' : '#ffffff';
+
+  // --- Gráfica 1: Barras por Territorio ---
+  const ctxTerritorios = document.getElementById('chartTerritorios').getContext('2d');
+  if(chartTerritoriosInstance) chartTerritoriosInstance.destroy();
+  chartTerritoriosInstance = new Chart(ctxTerritorios, {
+    type: 'bar',
+    data: {
+      labels: Object.keys(countTerritorios),
+      datasets: [{
+        label: 'Cantidad de Cámaras',
+        data: Object.values(countTerritorios),
+        backgroundColor: 'rgba(139, 92, 246, 0.7)', // Morado
+        borderColor: '#8b5cf6',
+        borderWidth: 1,
+        borderRadius: 4
+      }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } } }
+  });
+
+  // --- Gráfica 2: Barras por Propietario ---
+  const ctxPropietarios = document.getElementById('chartPropietarios').getContext('2d');
+  if(chartPropietariosInstance) chartPropietariosInstance.destroy();
+  chartPropietariosInstance = new Chart(ctxPropietarios, {
+    type: 'bar',
+    data: {
+      labels: Object.keys(countPropietarios),
+      datasets: [{
+        label: 'Cantidad de Cámaras',
+        data: Object.values(countPropietarios),
+        backgroundColor: 'rgba(8, 145, 178, 0.7)', // Cyan
+        borderColor: '#0891b2',
+        borderWidth: 1,
+        borderRadius: 4
+      }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } } }
+  });
+
+  // --- Gráfica 3: Pastel por Tipos de Cámara ---
+  const ctxTipos = document.getElementById('chartTipos').getContext('2d');
+  if(chartTiposInstance) chartTiposInstance.destroy();
+  chartTiposInstance = new Chart(ctxTipos, {
+    type: 'pie',
+    data: {
+      labels: Object.keys(countTipos),
+      datasets: [{
+        data: Object.values(countTipos),
+        backgroundColor: ['#8b5cf6', '#0891b2', '#ec4899', '#22c55e', '#eab308', '#64748b'],
+        borderWidth: 2,
+        borderColor: pieBorderColor
+      }]
+    },
+    options: { responsive: true, maintainAspectRatio: false }
+  });
 }
 
 /* ==================== INICIO AUTOLOAD ==================== */
