@@ -267,7 +267,6 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
 <!-- SIDEBAR -->
 <div id="sidebar">
 <div class="logo"><i class="bi bi-camera-video-fill"></i></div>
-<button class="navicon" onclick="logout()" title="Cerrar sesión"><i class="bi bi-box-arrow-right"></i></button>
 <button class="navicon active" id="navMapa" onclick="switchView('mapa')" title="Mapa y Cámaras"><i class="bi bi-map-fill"></i></button>
 <button class="navicon" id="navTerritorios" onclick="switchView('territorios')" title="Territorios"><i class="bi bi-geo-alt-fill"></i></button>
 <button class="navicon" id="navPropietarios" onclick="switchView('propietarios')" title="Propietarios"><i class="bi bi-person-lines-fill"></i></button>
@@ -302,10 +301,11 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
 <button class="btn btn-add btn-sm" onclick="openForm()"><i class="bi bi-plus-lg"></i> Nueva</button>
 </div>
 <div class="filter-row" id="filterEstadoRow"></div>
-<div class="filter-row">
-<select id="filterTV" class="form-select form-select-sm" onchange="setFiltroTV(this.value)" style="max-width:180px">
-<option value="">Todos los TV</option>
-</select>
+<div class="filter-row justify-content-between align-items-center mb-2">
+  <select id="filterTV" class="form-select form-select-sm" onchange="setFiltroTV(this.value)" style="max-width:180px">
+    <option value="">Todos los TV</option>
+  </select>
+  <span class="text-muted small fw-semibold" id="searchResultCount">0 resultados</span>
 </div>
 <div class="d-flex justify-content-end mb-2 view-toggle">
 <div class="btn-group" role="group">
@@ -1487,6 +1487,13 @@ function render(){
   (filtroEstado===''||c.estado===filtroEstado) &&
   (filtroTV===''||c.territorio_id===filtroTV)
  );
+ 
+ // Actualizar el contador total de resultados encontrados
+ let resultCountEl = document.getElementById('searchResultCount');
+ if(resultCountEl) {
+   resultCountEl.textContent = data.length + ' resultado' + (data.length === 1 ? '' : 's');
+ }
+
  list.className=(document.getElementById('viewMode')&&document.getElementById('viewMode').value==='2')?'row g-2':'';
  list.innerHTML='';
  if(!data.length){
