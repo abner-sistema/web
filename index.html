@@ -91,6 +91,29 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
 .navicon.active{background:linear-gradient(135deg,rgba(139,92,246,.28),rgba(34,211,238,.2));color:var(--purple);}
 .navicon:not(.active):hover{background:var(--panel2);color:var(--text);}
 
+/* Estilos personalizados para el menú desplegable del sidebar */
+.sidebar-dropdown .dropdown-toggle::after { display: none; }
+.sidebar-dropdown .dropdown-menu {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  border-radius: var(--radius-sm);
+  padding: 6px;
+}
+.sidebar-dropdown .dropdown-item {
+  color: var(--text);
+  font-size: 0.85rem;
+  padding: 8px 12px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sidebar-dropdown .dropdown-item:hover {
+  background: var(--panel2);
+  color: var(--purple);
+}
+
 #mainArea{flex:1; padding:18px 22px; min-width:0;}
 
 /* Top strip */
@@ -272,8 +295,18 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
 <button class="navicon" id="navPropietarios" onclick="switchView('propietarios')" title="Propietarios"><i class="bi bi-person-lines-fill"></i></button>
 <button class="navicon" id="navEstadisticas" onclick="switchView('estadisticas')" title="Estadísticas"><i class="bi bi-bar-chart-fill"></i></button>
 <button class="navicon" id="navReporte" onclick="switchView('reporte')" title="Reporte de texto"><i class="bi bi-chat-square-text"></i></button>
-<button class="navicon" onclick="exportExcel()" title="Exportar Excel"><i class="bi bi-file-earmark-excel"></i></button>
-<button class="navicon" onclick="exportPDF()" title="Exportar PDF"><i class="bi bi-file-earmark-pdf"></i></button>
+
+<!-- SECCIÓN AGRUPADA: EXPORTAR (EXCEL Y PDF) -->
+<div class="dropdown sidebar-dropdown">
+  <button class="navicon dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Exportar datos">
+    <i class="bi bi-download"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-dark">
+    <li><a class="dropdown-item" href="#" onclick="exportExcel()"><i class="bi bi-file-earmark-excel text-success"></i> Exportar Excel</a></li>
+    <li><a class="dropdown-item" href="#" onclick="exportPDF()"><i class="bi bi-file-earmark-pdf text-danger"></i> Exportar PDF</a></li>
+  </ul>
+</div>
+
 <button class="navicon d-none" id="btnGestionEstaciones" onclick="openStationsAdmin()" title="Gestionar estaciones"><i class="bi bi-buildings-fill"></i></button>
 <button class="navicon" id="themeToggleBtn" onclick="toggleTheme()" title="Cambiar Tema (Claro/Oscuro)"><i class="bi bi-sun-fill"></i></button>
 <div style="flex:1"></div>
