@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es" data-bs-theme="dark">
+<html lang="es">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Abner - Sistema de Cámaras</title>
+<title>Abner</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -12,8 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
 <style>
-/* VARIABLES: MODO OSCURO (Default) */
-:root, [data-theme="dark"] {
+:root{
   --bg:#0c1018;
   --sidebar:#12071f;
   --panel:#161221;
@@ -29,29 +28,27 @@
   --danger:#ef4444;
   --radius:14px;
   --radius-sm:10px;
-  --map-filter: brightness(.85) contrast(1.05) saturate(.9);
 }
-
-/* VARIABLES: MODO CLARO */
-[data-theme="light"] {
-  --bg:#f4f5f9;
+body.light{
+  --bg:#f2f3f8;
   --sidebar:#ffffff;
   --panel:#ffffff;
-  --panel2:#f0f2f7;
-  --border:#e2e8f0;
-  --text:#1e293b;
-  --muted:#64748b;
+  --panel2:#f4f5f9;
+  --border:#e3e5ee;
+  --text:#1f2333;
+  --muted:#6b7280;
   --purple:#7c3aed;
   --cyan:#0891b2;
   --pink:#db2777;
-  --accent:#7c3aed;
-  --accent-dark:#6d28d9;
-  --danger:#dc2626;
-  --map-filter: none;
 }
-
+body.light #map{filter:none;}
+body.light .modal .btn-close{filter:none;}
+body.light .cam-thumb{background:linear-gradient(135deg,#e9e6f7,#dbe8ff);}
+body, .card, .modal-content, #sidebar, .cam-card, .kpi.flat, .filter-chip, .navicon, .search-row .form-control, .sidecard, table.table-modern td, table.table-modern th{
+  transition:background-color .3s ease, color .3s ease, border-color .3s ease;
+}
 *{box-sizing:border-box}
-body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;margin:0; transition: background-color 0.25s ease, color 0.25s ease;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;margin:0;}
 h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
 
 /* Login screen */
@@ -60,10 +57,7 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
   background:radial-gradient(circle at 30% 20%, #2a1454 0%, var(--bg) 60%);
   display:flex; align-items:center; justify-content:center; padding:16px;
 }
-[data-theme="light"] #loginScreen {
-  background:radial-gradient(circle at 30% 20%, #e0e7ff 0%, var(--bg) 60%);
-}
-.login-card{background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:28px; width:100%; max-width:380px; box-shadow:0 20px 50px rgba(0,0,0,.15);}
+.login-card{background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:28px; width:100%; max-width:380px; box-shadow:0 20px 50px rgba(0,0,0,.5);}
 .login-card .brand{font-size:1.3rem; font-weight:700; text-align:center; margin-bottom:18px; display:flex; align-items:center; justify-content:center; gap:8px; background:linear-gradient(135deg,var(--purple),var(--cyan)); -webkit-background-clip:text; background-clip:text; color:transparent;}
 .login-error{font-size:.82rem; color:var(--danger); min-height:18px; margin-top:4px;}
 #loginScreen .form-control{background:var(--panel2); border-color:var(--border); color:var(--text);}
@@ -74,14 +68,15 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
 /* App shell: sidebar + content */
 #appShell{display:flex; min-height:100vh;}
 #sidebar{
-  width:76px; background:var(--sidebar);
+  width:76px; background:linear-gradient(180deg,var(--sidebar) 0%, #1a0d2e 100%);
   display:flex; flex-direction:column; align-items:center; padding:18px 0; gap:6px;
-  border-right:1px solid var(--border); flex-shrink:0; transition: background-color 0.25s ease;
+  border-right:1px solid var(--border); flex-shrink:0;
 }
 #sidebar .logo{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--purple),var(--cyan));display:flex;align-items:center;justify-content:center;margin-bottom:20px;font-size:17px;color:#fff;}
-.navicon{width:46px;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:19px;cursor:pointer;border:none;background:transparent; transition: all 0.2s ease;}
-.navicon.active{background:linear-gradient(135deg,rgba(139,92,246,.28),rgba(34,211,238,.2));color:var(--purple);}
-.navicon:not(.active):hover{background:var(--panel2);color:var(--text);}
+.navicon{width:46px;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:19px;cursor:pointer;border:none;background:transparent;}
+.navicon.active{background:linear-gradient(135deg,rgba(139,92,246,.28),rgba(34,211,238,.2));color:#fff;}
+.navicon:not(.active):hover{background:rgba(255,255,255,.06);color:#fff;}
+.navicon .lbl{display:none;}
 
 #mainArea{flex:1; padding:18px 22px; min-width:0;}
 
@@ -91,6 +86,7 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
 .count-pill{background:var(--panel2); border:1px solid var(--border); border-radius:999px; padding:2px 12px; font-size:.75rem; font-weight:600;}
 .station-pill{background:var(--panel2); border:1px solid var(--border); border-radius:999px; padding:5px 12px; font-size:.78rem; font-weight:600; display:flex; align-items:center; gap:6px; margin-left:auto;}
 .station-pill select{background:transparent;border:none;color:var(--text);font-weight:600;font-size:.78rem;}
+.station-pill select option{color:#111;}
 
 /* KPI cards */
 .kpis{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:16px;}
@@ -111,12 +107,12 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
   border-radius:999px; padding:4px 12px; font-size:.76rem; font-weight:600; cursor:pointer;
 }
 .filter-chip.active{background:linear-gradient(135deg,var(--purple),var(--pink)); border-color:transparent; color:#fff;}
-.filter-row select{border-radius:999px; font-size:.76rem; padding:4px 10px; width:auto; background:var(--panel2); border-color:var(--border); color:var(--text);}
+.filter-row select{border-radius:999px; font-size:.76rem; padding:4px 10px; width:auto;}
 
 /* Layout */
 .card{border:1px solid var(--border); border-radius:var(--radius); background:var(--panel); color:var(--text);}
-.panel{box-shadow:0 2px 14px rgba(0,0,0,.08);}
-#map{height:66vh; border-radius:var(--radius); overflow:hidden; border:1px solid var(--border); filter:var(--map-filter);}
+.panel{box-shadow:0 2px 14px rgba(0,0,0,.25);}
+#map{height:66vh; border-radius:var(--radius); overflow:hidden; border:1px solid var(--border); filter:brightness(.85) contrast(1.05) saturate(.9);}
 #list{max-height:66vh; overflow-y:auto; padding-right:4px;}
 #selectMap{height:500px; border-radius:8px}
 .preview{width:100%; height:170px; object-fit:contain; object-position:center; background:var(--panel2); border-radius:var(--radius-sm);}
@@ -136,22 +132,32 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
 .view-toggle .btn.active{background:linear-gradient(135deg,var(--purple),var(--cyan)); border-color:transparent; color:#fff;}
 .view-toggle .btn:first-child{margin-left:0;}
 
-/* Camera card */
+/* Camera card (compacta, con miniatura) */
 .cam-card{transition:transform .12s ease, box-shadow .12s ease; border-radius:var(--radius-sm); overflow:hidden; background:var(--panel2); border:1px solid var(--border);}
-.cam-card:hover{transform:translateY(-1px); box-shadow:0 6px 16px rgba(0,0,0,.1);}
-.cam-thumb{width:38px;height:38px;border-radius:9px;background:var(--panel);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:15px;overflow:hidden; border: 1px solid var(--border);}
+.cam-card:hover{transform:translateY(-1px); box-shadow:0 6px 16px rgba(0,0,0,.35);}
+.cam-thumb{width:38px;height:38px;border-radius:9px;background:linear-gradient(135deg,#2a2440,#3a3160);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:15px;overflow:hidden;}
 .cam-thumb img{width:100%;height:100%;object-fit:cover;}
 .cam-name{font-weight:600; font-size:.92rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 .cam-meta{font-size:.76rem; color:var(--muted); display:flex; align-items:center; gap:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-.tv-badge{background:rgba(236,72,153,.15); color:var(--pink); font-weight:600; font-size:.68rem; padding:2px 9px; border-radius:999px; display:inline-flex; align-items:center; gap:4px;}
-.info-badge{background:var(--panel); color:var(--muted); border:1px solid var(--border); font-weight:600; font-size:.68rem; padding:2px 9px; border-radius:999px; display:inline-flex; align-items:center; gap:4px;}
-.estado-badge{font-weight:600; font-size:.68rem; padding:2px 9px 2px 7px; border-radius:999px; display:inline-flex; align-items:center; gap:5px;}
+.tv-badge{
+  background:rgba(236,72,153,.15); color:#f472b6; font-weight:600; font-size:.68rem;
+  padding:2px 9px; border-radius:999px; display:inline-flex; align-items:center; gap:4px;
+}
+.info-badge{
+  background:var(--panel); color:var(--muted); font-weight:600; font-size:.68rem;
+  padding:2px 9px; border-radius:999px; display:inline-flex; align-items:center; gap:4px;
+}
+.estado-badge{
+  font-weight:600; font-size:.68rem; padding:2px 9px 2px 7px; border-radius:999px;
+  display:inline-flex; align-items:center; gap:5px;
+}
 .estado-dot{width:8px; height:8px; border-radius:50%; display:inline-block; flex-shrink:0;}
 .cam-card{position:relative; border-left:3px solid var(--border);}
 .badges-row{display:flex; flex-wrap:wrap; gap:5px;}
 .cam-actions .btn{border-radius:8px;}
 .empty-state{text-align:center; padding:40px 12px; color:var(--muted);}
 .empty-state i{font-size:2.4rem; display:block; margin-bottom:8px; opacity:.5;}
+#liveToast.fade{transition-duration:.12s;}
 
 /* Panel derecho: dona + territorios */
 .sidecard{background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:14px; margin-bottom:14px;}
@@ -163,30 +169,43 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
 .legend .val{margin-left:auto;color:var(--text);font-weight:600;}
 .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 
-/* Form inputs & tables */
+/* Imagen clicable en tarjeta de cámara */
+.cam-clickable-img{cursor:pointer; transition:filter .15s ease, transform .15s ease;}
+.cam-clickable-img:hover{filter:brightness(1.18); transform:scale(1.03);}
+
+/* Tabla moderna para Territorios / Propietarios */
+table.table-modern{width:100%; border-collapse:separate; border-spacing:0; color:var(--text);}
+table.table-modern thead th{font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); font-weight:600; padding:8px 10px; border-bottom:1px solid var(--border); user-select:none;}
+table.table-modern tbody td{padding:9px 10px; border-bottom:1px solid var(--border); font-size:.88rem; vertical-align:middle;}
+table.table-modern tbody tr:hover{background:var(--panel2);}
+.pag-info{font-size:.78rem;}
+
+/* Vistas de página completa (Territorios, Propietarios, Estadísticas) */
+.page-view .card{padding:0;}
+
+/* Form modal */
 .form-icon-input{position:relative;}
 .form-icon-input i{position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--muted);}
-.form-icon-input input, .form-icon-input select{padding-left:36px;}
+.form-icon-input input{padding-left:36px;}
 .is-invalid-field{border-color:var(--danger) !important; box-shadow:0 0 0 .2rem rgba(214,69,80,.15);}
 
+/* Modales oscuros */
 .modal-content{background:var(--panel); color:var(--text); border:1px solid var(--border);}
 .modal-header, .modal-footer{border-color:var(--border);}
-.modal .form-control, .modal .form-select, .catalog-table .form-control{background:var(--panel2); border-color:var(--border); color:var(--text);}
-.modal .form-control:focus, .modal .form-select:focus, .catalog-table .form-control:focus{background:var(--panel2); color:var(--text); border-color:var(--purple); box-shadow:0 0 0 .2rem rgba(139,92,246,.25);}
+.modal .form-control, .modal .form-select{background:var(--panel2); border-color:var(--border); color:var(--text);}
+.modal .form-control:focus, .modal .form-select:focus{background:var(--panel2); color:var(--text); border-color:var(--purple); box-shadow:0 0 0 .2rem rgba(139,92,246,.25);}
 .modal .form-control::placeholder{color:var(--muted);}
+.modal .btn-close{filter:invert(1) grayscale(1) brightness(1.6);}
+.modal .text-muted{color:var(--muted) !important;}
+.modal .table{color:var(--text);}
 .btn-success{background:linear-gradient(135deg,#0891b2,#22c55e); border:none;}
 .btn-primary{background:linear-gradient(135deg,var(--purple),var(--cyan)); border:none;}
 .btn-secondary{background:var(--panel2); border-color:var(--border); color:var(--text);}
 
-/* Tabla estilo catálogo dedicado */
-.catalog-card{background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:20px;}
-.catalog-table{color:var(--text); vertical-align:middle; margin-bottom:0;}
-.catalog-table th{background:var(--panel2); color:var(--muted); font-size:.8rem; border-color:var(--border); text-transform:uppercase; letter-spacing:.05em;}
-.catalog-table td{border-color:var(--border); font-size:.9rem; color:var(--text);}
-.catalog-table tr.adding-row{background:rgba(139,92,246,.06);}
-
-/* Mini formulario de despliegue rápido */
-.inline-quick-add{background:var(--panel2); border:1px solid var(--purple); border-radius:var(--radius-sm); padding:10px; margin-top:6px; margin-bottom:10px;}
+/* Stations/territorios/propietarios list rows */
+.station-row{display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--border);}
+.station-row:last-child{border-bottom:none;}
+.station-row .st-name{font-weight:600; flex:1;}
 
 /* Barra de pestañas móvil */
 #mobileTabbar{
@@ -195,7 +214,7 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
   padding:8px 4px; justify-content:space-around;
 }
 .mtab{display:flex; flex-direction:column; align-items:center; gap:3px; font-size:9.5px; color:var(--muted); background:none; border:none;}
-.mtab.active{color:var(--purple);}
+.mtab.active{color:#fff;}
 .mtab i{font-size:19px;}
 
 /* Responsive */
@@ -206,6 +225,7 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
   .kpis{grid-template-columns:repeat(2,1fr);}
   #map{height:42vh; margin-top:14px;}
   #list{max-height:48vh;}
+  .row.g-3{--bs-gutter-x: .75rem;}
 }
 @media (max-width:575.98px){
   #mainArea{padding:10px 10px 74px;}
@@ -214,9 +234,18 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
   .search-row{flex-wrap:wrap;}
   .search-row .form-control{flex:1 1 100%;}
   .btn-add{flex:1 1 100%; justify-content:center;}
+  .modal-dialog{margin:.5rem;}
   .kpis{grid-template-columns:repeat(2,1fr); gap:8px;}
   .kpi{padding:12px 14px;}
   .kpi .n{font-size:20px;}
+}
+.cam-highlight-pulse{animation:camPulse 1.8s ease-out;}
+.cam-pin-icon{background:transparent !important;border:none !important;}
+@keyframes camPulse{
+ 0%{stroke:#ff6a00 !important;fill:#ff6a00 !important;stroke-opacity:1;fill-opacity:.45;}
+ 40%{stroke:#ff6a00 !important;fill:#ff6a00 !important;stroke-opacity:.9;fill-opacity:.3;}
+ 70%{stroke:#0d6efd !important;fill:#0d6efd !important;stroke-opacity:.5;fill-opacity:.12;}
+ 100%{stroke:#0d6efd !important;fill:#0d6efd !important;stroke-opacity:0;fill-opacity:0;}
 }
 </style>
 </head>
@@ -239,31 +268,29 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
 <div id="appScreen" class="d-none">
 <div id="appShell">
 
-<!-- SIDEBAR -->
 <div id="sidebar">
 <div class="logo"><i class="bi bi-camera-video-fill"></i></div>
-<button class="navicon active" id="navMapa" onclick="switchView('mapa')" title="Mapa y Cámaras"><i class="bi bi-map-fill"></i></button>
-<button class="navicon" id="navTerritorios" onclick="switchView('territorios')" title="Territorios"><i class="bi bi-geo-alt-fill"></i></button>
-<button class="navicon" id="navPropietarios" onclick="switchView('propietarios')" title="Propietarios"><i class="bi bi-person-lines-fill"></i></button>
-<button class="navicon" id="navEstadisticas" onclick="switchView('estadisticas')" title="Estadísticas"><i class="bi bi-bar-chart-fill"></i></button>
+<button class="navicon active" id="navMapa" onclick="mostrarVista('Mapa')" title="Mapa"><i class="bi bi-map-fill"></i></button>
+<button class="navicon" id="navTerritorios" onclick="mostrarVista('Territorios')" title="Territorios"><i class="bi bi-geo-alt-fill"></i></button>
+<button class="navicon" id="navPropietarios" onclick="mostrarVista('Propietarios')" title="Propietarios"><i class="bi bi-person-lines-fill"></i></button>
+<button class="navicon" id="navEstadisticas" onclick="mostrarVista('Estadisticas')" title="Estadísticas"><i class="bi bi-bar-chart-fill"></i></button>
 <button class="navicon" onclick="abrirReporte()" title="Reporte de texto"><i class="bi bi-chat-square-text"></i></button>
 <button class="navicon" onclick="exportExcel()" title="Exportar Excel"><i class="bi bi-file-earmark-excel"></i></button>
 <button class="navicon" onclick="exportPDF()" title="Exportar PDF"><i class="bi bi-file-earmark-pdf"></i></button>
 <button class="navicon d-none" id="btnGestionEstaciones" onclick="openStationsAdmin()" title="Gestionar estaciones"><i class="bi bi-buildings-fill"></i></button>
-<button class="navicon" id="themeToggleBtn" onclick="toggleTheme()" title="Cambiar Tema (Claro/Oscuro)"><i class="bi bi-sun-fill"></i></button>
 <div style="flex:1"></div>
+<button class="navicon" onclick="toggleTheme()" title="Cambiar tema"><i class="bi bi-sun-fill" id="themeIcon"></i></button>
 <button class="navicon" onclick="logout()" title="Cerrar sesión"><i class="bi bi-box-arrow-right"></i></button>
 </div>
 
 <div id="mainArea">
 
+<div id="viewMapa">
 <div class="topstrip">
-<div class="brand" id="topstripTitle"><i class="bi bi-camera-video-fill"></i> Cámaras <span class="count-pill" id="countPill">0</span></div>
+<div class="brand"><i class="bi bi-camera-video-fill"></i> Cámaras <span class="count-pill" id="countPill">0</span></div>
 <div class="station-pill" id="stationPillWrap"><i class="bi bi-geo"></i> <span id="stationPillLabel"></span></div>
 </div>
 
-<!-- VISTA PRINCIPAL: MAPA + CÁMARAS -->
-<div id="viewMainMapa">
 <div class="kpis" id="kpiRow"></div>
 
 <div class="row g-3">
@@ -273,6 +300,7 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
 <input id="search" class="form-control" placeholder="Buscar cámara, TV, propietario..." oninput="render()">
 <button class="btn btn-add btn-sm" onclick="openForm()"><i class="bi bi-plus-lg"></i> Nueva</button>
 </div>
+<div class="small text-muted mb-2" id="searchCount"></div>
 <div class="filter-row" id="filterEstadoRow"></div>
 <div class="filter-row">
 <select id="filterTV" class="form-select form-select-sm" onchange="setFiltroTV(this.value)" style="max-width:180px">
@@ -304,123 +332,97 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
 </div>
 </div>
 
-<!-- VISTA COMPLETA DEDICADA: TERRITORIOS -->
-<div id="viewTerritorios" class="d-none">
-<div class="catalog-card">
-<div class="d-flex align-items-center justify-content-between mb-3">
-<div>
-  <h4 class="m-0 fw-bold"><i class="bi bi-geo-alt-fill text-purple me-2"></i>Catálogo de Territorios Vecinales (TV)</h4>
-  <p class="text-muted small m-0">Gestiona y consulta los territorios asignados a esta estación</p>
+<!-- ==================== PÁGINA: TERRITORIOS ==================== -->
+<div id="viewTerritorios" class="d-none page-view">
+<div class="topstrip">
+<div class="brand"><i class="bi bi-geo-alt-fill"></i> Territorios <span class="count-pill" id="territoriosCountPill">0</span></div>
 </div>
-</div>
-<div class="table-responsive">
-<table class="table catalog-table table-hover align-middle">
-<thead>
-<tr>
-  <th style="width: 50%;">Nombre del Territorio</th>
-  <th style="width: 25%;">Cámaras Asociadas</th>
-  <th style="width: 25%; text-align: right;">Acciones</th>
-</tr>
-</thead>
-<tbody id="territoriosTableBody">
-<!-- Renderizado dinámico inline -->
-</tbody>
-</table>
-</div>
-</div>
-</div>
-
-<!-- VISTA COMPLETA DEDICADA: PROPIETARIOS -->
-<div id="viewPropietarios" class="d-none">
-<div class="catalog-card">
-<div class="d-flex align-items-center justify-content-between mb-3">
-<div>
-  <h4 class="m-0 fw-bold"><i class="bi bi-person-lines-fill text-cyan me-2"></i>Catálogo de Propietarios</h4>
-  <p class="text-muted small m-0">Administra la lista de propietarios y su contacto directo por WhatsApp</p>
-</div>
+<div class="card panel p-3">
+<div class="search-row mb-2">
+<input id="searchTerritorios" class="form-control" placeholder="Buscar territorio..." oninput="paginaTerritorios=1;renderTerritoriosTabla()">
+<button class="btn btn-add btn-sm" onclick="nuevaFilaTerritorio()"><i class="bi bi-plus-lg"></i> Nuevo</button>
 </div>
 <div class="table-responsive">
-<table class="table catalog-table table-hover align-middle">
-<thead>
-<tr>
-  <th style="width: 35%;">Nombre del Propietario</th>
-  <th style="width: 30%;">WhatsApp</th>
-  <th style="width: 15%;">Cámaras</th>
-  <th style="width: 20%; text-align: right;">Acciones</th>
-</tr>
-</thead>
-<tbody id="propietariosTableBody">
-<!-- Renderizado dinámico inline -->
-</tbody>
+<table class="table-modern">
+<thead><tr>
+<th onclick="ordenarTerritorios('nombre')">Nombre <i class="bi bi-arrow-down-up"></i></th>
+<th onclick="ordenarTerritorios('n')" style="width:120px">Cámaras <i class="bi bi-arrow-down-up"></i></th>
+<th style="width:110px" class="text-end">Acciones</th>
+</tr></thead>
+<tbody id="tbodyTerritorios"></tbody>
 </table>
 </div>
+<div class="d-flex justify-content-between align-items-center mt-2 flex-wrap gap-2">
+<div class="text-muted pag-info" id="territoriosPagInfo"></div>
+<div class="btn-group btn-group-sm" id="territoriosPagBtns"></div>
 </div>
-</div>
-
-<!-- VISTA COMPLETA DEDICADA: ESTADÍSTICAS -->
-<div id="viewEstadisticas" class="d-none">
-  <div class="catalog-card">
-    <div class="d-flex align-items-center justify-content-between mb-4">
-      <div>
-        <h4 class="m-0 fw-bold"><i class="bi bi-bar-chart-fill text-purple me-2"></i>Dashboard de Estadísticas</h4>
-        <p class="text-muted small m-0">Análisis gráfico de las cámaras registradas en esta estación</p>
-      </div>
-    </div>
-    
-    <div class="row g-4">
-      <!-- Barras: Territorios -->
-      <div class="col-md-6">
-        <div class="card p-3 h-100" style="background: var(--panel2); border-color: var(--border);">
-          <h6 class="text-center text-muted mb-3 fw-bold">Cámaras por Territorio</h6>
-          <canvas id="chartTerritorios"></canvas>
-        </div>
-      </div>
-      <!-- Barras: Propietarios -->
-      <div class="col-md-6">
-        <div class="card p-3 h-100" style="background: var(--panel2); border-color: var(--border);">
-          <h6 class="text-center text-muted mb-3 fw-bold">Cámaras por Propietario</h6>
-          <canvas id="chartPropietarios"></canvas>
-        </div>
-      </div>
-      <!-- Pastel: Tipos -->
-      <div class="col-md-6 mx-auto mt-4">
-        <div class="card p-3 h-100" style="background: var(--panel2); border-color: var(--border);">
-          <h6 class="text-center text-muted mb-3 fw-bold">Tipos de Cámara</h6>
-          <div style="height: 300px; position: relative;">
-            <canvas id="chartTipos"></canvas>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
 </div>
 </div>
 
-<!-- TABBAR MÓVIL -->
+<!-- ==================== PÁGINA: PROPIETARIOS ==================== -->
+<div id="viewPropietarios" class="d-none page-view">
+<div class="topstrip">
+<div class="brand"><i class="bi bi-person-lines-fill"></i> Propietarios <span class="count-pill" id="propietariosCountPill">0</span></div>
+</div>
+<div class="card panel p-3">
+<div class="search-row mb-2">
+<input id="searchPropietarios" class="form-control" placeholder="Buscar propietario..." oninput="paginaPropietarios=1;renderPropietariosTabla()">
+<button class="btn btn-add btn-sm" onclick="nuevaFilaPropietario()"><i class="bi bi-plus-lg"></i> Nuevo</button>
+</div>
+<div class="table-responsive">
+<table class="table-modern">
+<thead><tr>
+<th onclick="ordenarPropietarios('nombre')">Nombre <i class="bi bi-arrow-down-up"></i></th>
+<th onclick="ordenarPropietarios('whatsapp')">WhatsApp <i class="bi bi-arrow-down-up"></i></th>
+<th onclick="ordenarPropietarios('n')" style="width:120px">Cámaras <i class="bi bi-arrow-down-up"></i></th>
+<th style="width:110px" class="text-end">Acciones</th>
+</tr></thead>
+<tbody id="tbodyPropietarios"></tbody>
+</table>
+</div>
+<div class="d-flex justify-content-between align-items-center mt-2 flex-wrap gap-2">
+<div class="text-muted pag-info" id="propietariosPagInfo"></div>
+<div class="btn-group btn-group-sm" id="propietariosPagBtns"></div>
+</div>
+</div>
+</div>
+
+<!-- ==================== PÁGINA: ESTADÍSTICAS ==================== -->
+<div id="viewEstadisticas" class="d-none page-view">
+<div class="topstrip">
+<div class="brand"><i class="bi bi-bar-chart-fill"></i> Estadísticas</div>
+</div>
+<div class="row g-3">
+<div class="col-lg-6"><div class="card panel p-3"><h4 class="small text-uppercase mb-3" style="color:var(--muted)">Cámaras por territorio</h4><canvas id="chartTerritorio" height="230"></canvas></div></div>
+<div class="col-lg-6"><div class="card panel p-3"><h4 class="small text-uppercase mb-3" style="color:var(--muted)">Cámaras por propietario</h4><canvas id="chartPropietario" height="230"></canvas></div></div>
+<div class="col-lg-6"><div class="card panel p-3"><h4 class="small text-uppercase mb-3" style="color:var(--muted)">Tipos de cámara</h4><canvas id="chartTipos" height="230"></canvas></div></div>
+</div>
+</div>
+
+</div>
+</div>
+
 <div id="mobileTabbar">
-<button class="mtab active" id="mtabMapa" onclick="switchView('mapa')"><i class="bi bi-map-fill"></i>Mapa</button>
-<button class="mtab" id="mtabTerritorios" onclick="switchView('territorios')"><i class="bi bi-geo-alt-fill"></i>Territ.</button>
-<button class="mtab" id="mtabPropietarios" onclick="switchView('propietarios')"><i class="bi bi-person-lines-fill"></i>Propiet.</button>
-<button class="mtab" id="mtabEstadisticas" onclick="switchView('estadisticas')"><i class="bi bi-bar-chart-fill"></i>Estad.</button>
+<button class="mtab active" onclick="mostrarVista('Mapa')"><i class="bi bi-map-fill"></i>Mapa</button>
+<button class="mtab" onclick="irACamaras()"><i class="bi bi-camera-video-fill"></i>Cámaras</button>
+<button class="mtab" onclick="mostrarVista('Territorios')"><i class="bi bi-geo-alt-fill"></i>Territ.</button>
+<button class="mtab" onclick="mostrarVista('Propietarios')"><i class="bi bi-person-lines-fill"></i>Propiet.</button>
 <button class="mtab" onclick="abrirMas()"><i class="bi bi-grid-3x3-gap-fill"></i>Más</button>
 </div>
 
-<!-- MODAL MÁS OPCIONES -->
 <div class="modal fade" id="masModal"><div class="modal-dialog modal-dialog-centered"><div class="modal-content">
 <div class="modal-header"><h5>Más opciones</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
 <div class="modal-body d-grid gap-2">
-<button class="btn btn-secondary text-start" onclick="bootstrap.Modal.getInstance(document.getElementById('masModal')).hide();toggleTheme();"><i class="bi bi-sun-fill me-2"></i>Cambiar Tema (Claro/Oscuro)</button>
+<button class="btn btn-secondary text-start" onclick="bootstrap.Modal.getInstance(document.getElementById('masModal')).hide();mostrarVista('Estadisticas');"><i class="bi bi-bar-chart-fill me-2"></i>Estadísticas</button>
 <button class="btn btn-secondary text-start" onclick="bootstrap.Modal.getInstance(document.getElementById('masModal')).hide();abrirReporte();"><i class="bi bi-chat-square-text me-2"></i>Reporte de texto</button>
 <button class="btn btn-secondary text-start" onclick="exportExcel()"><i class="bi bi-file-earmark-excel me-2"></i>Exportar Excel</button>
 <button class="btn btn-secondary text-start" onclick="exportPDF()"><i class="bi bi-file-earmark-pdf me-2"></i>Exportar PDF</button>
 <button class="btn btn-secondary text-start d-none" id="btnGestionEstacionesMobile" onclick="bootstrap.Modal.getInstance(document.getElementById('masModal')).hide();openStationsAdmin();"><i class="bi bi-buildings-fill me-2"></i>Gestionar estaciones</button>
+<button class="btn btn-secondary text-start" onclick="toggleTheme()"><i class="bi bi-moon-stars-fill me-2"></i>Cambiar tema</button>
 <button class="btn btn-secondary text-start" onclick="logout()"><i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión</button>
 </div>
 </div></div></div>
 
-<!-- MODAL FORMULARIO CÁMARA -->
 <div class="modal fade" id="camModal">
 <div class="modal-dialog modal-dialog-scrollable">
 <div class="modal-content">
@@ -429,23 +431,14 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
 <input id="camId" type="hidden">
 <div class="form-icon-input mb-2"><i class="bi bi-camera-video"></i><input id="nombre" class="form-control" placeholder="Nombre *"></div>
 <div class="form-icon-input mb-2"><i class="bi bi-signpost-split"></i><input id="direccion" class="form-control" placeholder="Dirección *"></div>
-
-<!-- Selector TV + Formulario Desplegable Inline para "+ Nuevo" -->
-<div class="form-icon-input mb-2">
-<i class="bi bi-people-fill"></i>
-<select id="tv" class="form-select" onchange="checkInlineQuickAdd('tv')">
-<option value="">Territorio Vecinal (TV) *</option>
-</select>
+<div class="form-icon-input mb-2"><i class="bi bi-people-fill"></i><select id="tv" class="form-select ps-4" onchange="onCambioTerritorio()"><option value="">Territorio Vecinal (TV) *</option></select></div>
+<div id="nuevoTerritorioInline" class="d-none border rounded p-2 mb-2" style="background:var(--panel2);border-color:var(--border) !important;">
+<input id="inlineTerritorioNombre" class="form-control form-control-sm mb-2" placeholder="Nombre del nuevo territorio">
+<div class="d-flex gap-2">
+<button type="button" class="btn btn-sm btn-success" onclick="guardarTerritorioInline()"><i class="bi bi-check-lg"></i> Agregar</button>
+<button type="button" class="btn btn-sm btn-secondary" onclick="cancelarTerritorioInline()"><i class="bi bi-x-lg"></i> Cancelar</button>
 </div>
-<div id="quickAddTerritorioBox" class="inline-quick-add d-none">
-  <div class="fw-semibold small mb-1 text-purple"><i class="bi bi-plus-circle me-1"></i>Nuevo Territorio Vecinal</div>
-  <div class="d-flex gap-2">
-    <input id="quickTerritorioNombre" class="form-control form-control-sm" placeholder="Ej. TV-54 (Trupal)">
-    <button type="button" class="btn btn-sm btn-success" onclick="guardarQuickTerritorio()"><i class="bi bi-check-lg"></i></button>
-    <button type="button" class="btn btn-sm btn-secondary" onclick="closeQuickAdd('tv')"><i class="bi bi-x-lg"></i></button>
-  </div>
 </div>
-
 <div class="row g-2 mb-2">
 <div class="col-6">
 <select id="tipo" class="form-select" onchange="toggleTipoOtro()">
@@ -467,7 +460,7 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
 </select>
 </div>
 </div>
-<input id="tipoOtro" class="form-control mb-2 d-none" placeholder="Especifique el tipo de cámara">
+<input id="tipoOtro" class="form-control mb-2 d-none" placeholder="Especifique el tipo de cámara" oninput="">
 <select id="estado" class="form-select mb-2">
 <option value="">Estado de la cámara *</option>
 <option value="operativa">🟢 Operativa</option>
@@ -481,26 +474,15 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
 </div>
 <button class="btn btn-outline-primary w-100 mb-2" id="btnSeleccionarMapa" onclick="seleccionarMapa()"><i class="bi bi-geo-alt-fill me-1"></i>Seleccionar en mapa *</button>
 <div class="form-icon-input mb-2"><i class="bi bi-link-45deg"></i><input id="maps" class="form-control" placeholder="URL Google Maps"></div>
-
-<!-- Selector Propietario + Formulario Desplegable Inline para "+ Nuevo" -->
-<div class="form-icon-input mb-2">
-<i class="bi bi-person-fill"></i>
-<select id="propietario" class="form-select" onchange="checkInlineQuickAdd('propietario')">
-<option value="">Propietario *</option>
-</select>
+<div class="form-icon-input mb-2"><i class="bi bi-person-fill"></i><select id="propietario" class="form-select ps-4" onchange="onCambioPropietario()"><option value="">Propietario *</option></select></div>
+<div id="nuevoPropietarioInline" class="d-none border rounded p-2 mb-2" style="background:var(--panel2);border-color:var(--border) !important;">
+<input id="inlinePropietarioNombre" class="form-control form-control-sm mb-2" placeholder="Nombre del nuevo propietario">
+<input id="inlinePropietarioWpp" class="form-control form-control-sm mb-2" placeholder="WhatsApp (opcional)">
+<div class="d-flex gap-2">
+<button type="button" class="btn btn-sm btn-success" onclick="guardarPropietarioInline()"><i class="bi bi-check-lg"></i> Agregar</button>
+<button type="button" class="btn btn-sm btn-secondary" onclick="cancelarPropietarioInline()"><i class="bi bi-x-lg"></i> Cancelar</button>
 </div>
-<div id="quickAddPropietarioBox" class="inline-quick-add d-none">
-  <div class="fw-semibold small mb-1 text-cyan"><i class="bi bi-plus-circle me-1"></i>Nuevo Propietario</div>
-  <div class="d-flex flex-column gap-2 mb-2">
-    <input id="quickPropietarioNombre" class="form-control form-control-sm" placeholder="Nombre completo">
-    <input id="quickPropietarioWpp" class="form-control form-control-sm" placeholder="WhatsApp (ej. 51999999999)">
-  </div>
-  <div class="d-flex justify-content-end gap-2">
-    <button type="button" class="btn btn-sm btn-secondary" onclick="closeQuickAdd('propietario')">Cancelar</button>
-    <button type="button" class="btn btn-sm btn-success" onclick="guardarQuickPropietario()"><i class="bi bi-check-lg me-1"></i>Guardar</button>
-  </div>
 </div>
-
 <div class="small text-muted mb-2" id="propietarioWhatsappInfo"><i class="bi bi-whatsapp"></i> Sin WhatsApp registrado para este propietario</div>
 <label class="form-label small text-muted mb-1">Foto de la cámara *</label>
 <input id="foto" type="file" class="form-control" accept="image/*">
@@ -515,12 +497,14 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
 </div>
 </div>
 
-<!-- MAP PICKER MODAL -->
+
 <div class="modal fade" id="mapPickerModal">
 <div class="modal-dialog modal-xl modal-fullscreen-sm-down">
 <div class="modal-content">
 <div class="modal-header"><h5>Seleccionar ubicación de la cámara</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
-<div class="modal-body"><div id="selectMap"></div></div>
+<div class="modal-body">
+<div id="selectMap"></div>
+</div>
 <div class="modal-footer">
 <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
 <button class="btn btn-success" onclick="confirmLocation()">Confirmar ubicación</button>
@@ -529,7 +513,6 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
 </div>
 </div>
 
-<!-- TOAST -->
 <div class="position-fixed bottom-0 end-0 p-3" style="z-index:9999">
 <div id="liveToast" class="toast text-bg-success border-0">
 <div class="d-flex">
@@ -537,10 +520,56 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
 <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
 </div></div></div>
 
-<!-- MODALES DE DETALLE Y ELIMINACIÓN GENERAL -->
-<div class="modal fade" id="detailsModal"><div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title"><i class="bi bi-info-circle-fill me-1"></i>Detalles de la cámara</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body" id="detailsBody"></div></div></div></div>
+<div class="modal fade" id="detailsModal"><div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content">
+<div class="modal-header"><h5 class="modal-title"><i class="bi bi-info-circle-fill me-1"></i>Detalles de la cámara</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+<div class="modal-body" id="detailsBody"></div>
+</div></div></div>
 <div class="modal fade" id="deleteModal"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header bg-danger text-white"><h5 class="modal-title">Confirmar eliminación</h5></div><div class="modal-body" id="deleteText"></div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button class="btn btn-danger" id="confirmDeleteBtn">Eliminar</button></div></div></div></div>
-<div class="modal fade" id="reporteModal"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5><i class="bi bi-chat-square-text me-1"></i>Reporte de texto</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><textarea id="reporteTexto" class="form-control" rows="16" readonly style="font-family:monospace;font-size:.85rem;"></textarea></div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button><button class="btn btn-success" onclick="copiarReporte()"><i class="bi bi-clipboard-check me-1"></i>Copiar texto</button></div></div></div></div>
+
+<div class="modal fade" id="genericDeleteModal"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header bg-danger text-white"><h5 class="modal-title">Confirmar eliminación</h5></div><div class="modal-body" id="genericDeleteText"></div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button class="btn btn-danger" id="genericDeleteConfirmBtn">Eliminar</button></div></div></div></div>
+
+<div class="modal fade" id="reporteModal"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content">
+<div class="modal-header"><h5><i class="bi bi-chat-square-text me-1"></i>Reporte de texto</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+<div class="modal-body">
+<div class="btn-group w-100 mb-2" role="group">
+<input type="radio" class="btn-check" name="modoReporte" id="modoAmbos" value="ambos" checked onchange="actualizarReporte()">
+<label class="btn btn-outline-secondary btn-sm" for="modoAmbos">Ambos</label>
+<input type="radio" class="btn-check" name="modoReporte" id="modoOperativas" value="operativas" onchange="actualizarReporte()">
+<label class="btn btn-outline-secondary btn-sm" for="modoOperativas">Operativas</label>
+<input type="radio" class="btn-check" name="modoReporte" id="modoInoperativas" value="inoperativas" onchange="actualizarReporte()">
+<label class="btn btn-outline-secondary btn-sm" for="modoInoperativas">Inoperativas</label>
+</div>
+<textarea id="reporteTexto" class="form-control" rows="16" readonly style="font-family:monospace;font-size:.85rem;"></textarea>
+</div>
+<div class="modal-footer">
+<button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+<button class="btn btn-success" onclick="copiarReporte()"><i class="bi bi-clipboard-check me-1"></i>Copiar texto</button>
+</div>
+</div></div></div>
+
+<div class="modal fade" id="stationsModal"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content">
+<div class="modal-header"><h5><i class="bi bi-buildings me-1"></i>Gestión de estaciones</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+<div class="modal-body">
+<div id="stationsList"></div>
+<hr>
+<button class="btn btn-primary w-100" onclick="nuevaEstacionAdmin()"><i class="bi bi-plus-lg me-1"></i>Nueva estación</button>
+</div>
+<div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button></div>
+</div></div></div>
+
+<div class="modal fade" id="estacionFormModal"><div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+<div class="modal-header"><h5 id="estacionFormTitulo">Nueva estación</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+<div class="modal-body">
+<input type="hidden" id="editStationId">
+<div class="small text-muted mb-2">1. Crea el usuario en Supabase → Authentication → Add user.<br>2. Copia su UID y pégalo aquí.</div>
+<div class="form-icon-input mb-2"><i class="bi bi-buildings"></i><input id="editStationName" class="form-control" placeholder="Nombre de la estación"></div>
+<div class="form-icon-input mb-2"><i class="bi bi-key-fill"></i><input id="editStationUid" class="form-control" placeholder="UID del usuario (de Supabase Auth)"></div>
+</div>
+<div class="modal-footer">
+<button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+<button class="btn btn-success" onclick="guardarEstacion()"><i class="bi bi-check-lg me-1"></i>Guardar</button>
+</div>
+</div></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -549,97 +578,19 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
 /* ==================== SUPABASE ==================== */
 const SUPABASE_URL='https://ylweeiytonskodzdkoqa.supabase.co';
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlsd2VlaXl0b25za29kemRrb3FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5MjU1NDAsImV4cCI6MjEwMDUwMTU0MH0.RkCvrOR2VHVMERplmTi-BwlwH271X64O05BS4mESAkU';
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 
-/* ==================== GESTIÓN DE TEMAS (MODO CLARO / OSCURO) ==================== */
-function initTheme() {
-  const savedTheme = localStorage.getItem('app_theme') || 'dark';
-  applyTheme(savedTheme);
-}
+/* ==================== ESTACIONES / LOGIN ==================== */
+let stations=[];          // estaciones visibles para el usuario logueado (todas si es admin, la suya si es estación)
+let isAdminUser=false;    // true si el usuario logueado está en la tabla admins
+let currentStation=null;  // {id,nombre} de la estación propia (si no es admin)
+let viewingStationId=null;// id de la estación cuyas cámaras se están viendo/editando
 
-function toggleTheme() {
-  const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
-  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-  applyTheme(newTheme);
-}
-
-function applyTheme(theme) {
-  document.documentElement.setAttribute('data-theme', theme);
-  document.documentElement.setAttribute('data-bs-theme', theme);
-  localStorage.setItem('app_theme', theme);
-  
-  const themeBtn = document.getElementById('themeToggleBtn');
-  if (themeBtn) {
-    if (theme === 'light') {
-      themeBtn.innerHTML = '<i class="bi bi-moon-stars-fill"></i>';
-      themeBtn.title = 'Cambiar a Modo Oscuro';
-    } else {
-      themeBtn.innerHTML = '<i class="bi bi-sun-fill"></i>';
-      themeBtn.title = 'Cambiar a Modo Claro';
-    }
-  }
-}
-initTheme();
-
-/* ==================== ESTADO GLOBAL DE APLICACIÓN ==================== */
-let stations=[];
-let isAdminUser=false;
-let currentStation=null;
-let viewingStationId=null;
-let activeView='mapa';
-
-/* Estados de edición en línea (Inline Edit) */
-let editingTerritorioId = null;
-let deletingTerritorioId = null;
-let editingPropietarioId = null;
-let deletingPropietarioId = null;
-
-const toast=new bootstrap.Toast(document.getElementById('liveToast'),{delay:3500});
-function showToast(t){toast.hide();toastMsg.textContent=t;toast.show();}
-
-/* ==================== GESTIÓN DE VISTAS COMPLETAS ==================== */
-function switchView(viewName){
- activeView = viewName;
- document.getElementById('viewMainMapa').classList.toggle('d-none', viewName !== 'mapa');
- document.getElementById('viewTerritorios').classList.toggle('d-none', viewName !== 'territorios');
- document.getElementById('viewPropietarios').classList.toggle('d-none', viewName !== 'propietarios');
- document.getElementById('viewEstadisticas')?.classList.toggle('d-none', viewName !== 'estadisticas');
-
- document.getElementById('navMapa').classList.toggle('active', viewName === 'mapa');
- document.getElementById('navTerritorios').classList.toggle('active', viewName === 'territorios');
- document.getElementById('navPropietarios').classList.toggle('active', viewName === 'propietarios');
- document.getElementById('navEstadisticas')?.classList.toggle('active', viewName === 'estadisticas');
-
- document.getElementById('mtabMapa')?.classList.toggle('active', viewName === 'mapa');
- document.getElementById('mtabTerritorios')?.classList.toggle('active', viewName === 'territorios');
- document.getElementById('mtabPropietarios')?.classList.toggle('active', viewName === 'propietarios');
- document.getElementById('mtabEstadisticas')?.classList.toggle('active', viewName === 'estadisticas');
-
- const titleEl = document.getElementById('topstripTitle');
- if(viewName === 'mapa'){
-   titleEl.innerHTML = `<i class="bi bi-camera-video-fill"></i> Cámaras <span class="count-pill" id="countPill">${cams.length}</span>`;
- } else if(viewName === 'territorios'){
-   titleEl.innerHTML = `<i class="bi bi-geo-alt-fill text-purple"></i> Territorios <span class="count-pill">${territorios.length}</span>`;
-   renderTerritoriosTable();
- } else if(viewName === 'propietarios'){
-   titleEl.innerHTML = `<i class="bi bi-person-lines-fill text-cyan"></i> Propietarios <span class="count-pill">${propietarios.length}</span>`;
-   renderPropietariosTable();
- } else if(viewName === 'estadisticas'){
-   titleEl.innerHTML = `<i class="bi bi-bar-chart-fill text-purple"></i> Estadísticas`;
-   renderCharts();
- }
-
- if(viewName === 'mapa'){
-   setTimeout(() => map.invalidateSize(), 150);
- }
-}
-
-/* ==================== LOGIN / AUTENTICACIÓN ==================== */
 async function doLogin(){
  let email=document.getElementById('loginEmail').value.trim();
  let pass=document.getElementById('loginPass').value;
@@ -659,6 +610,7 @@ async function doLogin(){
  enterApp();
 }
 
+// Determina si el usuario logueado es admin o a qué estación pertenece
 async function resolveRole(){
  const {data:{user}}=await sb.auth.getUser();
  if(!user) return false;
@@ -692,12 +644,12 @@ function renderStationPill(){
  if(isAdminUser){
   let opts=stations.map(s=>'<option value="'+s.id+'" '+(s.id===viewingStationId?'selected':'')+'>'+s.nombre+'</option>').join('');
   wrap.innerHTML='Admin viendo: <select onchange="cambiarEstacionVista(this.value)">'+opts+'</select>';
-  document.getElementById('btnGestionEstaciones')?.classList.remove('d-none');
-  document.getElementById('btnGestionEstacionesMobile')?.classList.remove('d-none');
+  document.getElementById('btnGestionEstaciones').classList.remove('d-none');
+  document.getElementById('btnGestionEstacionesMobile').classList.remove('d-none');
  }else{
   wrap.textContent=currentStationName();
-  document.getElementById('btnGestionEstaciones')?.classList.add('d-none');
-  document.getElementById('btnGestionEstacionesMobile')?.classList.add('d-none');
+  document.getElementById('btnGestionEstaciones').classList.add('d-none');
+  document.getElementById('btnGestionEstacionesMobile').classList.add('d-none');
  }
 }
 
@@ -705,9 +657,89 @@ async function cambiarEstacionVista(id){
  viewingStationId=id;
  filtroEstado=''; filtroTV=''; document.getElementById('search').value='';
  renderFilterChips(); await loadTerritorios(); await loadPropietarios(); await loadCams(); populateFilterTV(); render(); renderStats();
- if(activeView==='territorios') renderTerritoriosTable();
- if(activeView==='propietarios') renderPropietariosTable();
- if(activeView==='estadisticas') renderCharts();
+}
+
+function openStationsAdmin(){
+ renderStationsList();
+ new bootstrap.Modal(document.getElementById('stationsModal')).show();
+}
+
+async function renderStationsList(){
+ let el=document.getElementById('stationsList');
+ if(!stations.length){ el.innerHTML='<div class="text-muted small">Aún no hay estaciones vinculadas.</div>'; return; }
+ el.innerHTML='<div class="text-muted small">Cargando...</div>';
+ const {data:allCams}=await sb.from('camaras').select('id,estacion_id');
+ el.innerHTML=stations.map(s=>{
+  let n=(allCams||[]).filter(c=>c.estacion_id===s.id).length;
+  return '<div class="station-row"><div class="st-name">'+s.nombre+'<div class="small text-muted">'+n+' cámara(s)</div></div>'+
+  '<button class="btn btn-sm btn-outline-secondary me-1" onclick="editarEstacionAdmin(\''+s.id+'\')"><i class="bi bi-pencil"></i></button>'+
+  '<button class="btn btn-sm btn-outline-danger" onclick="deleteStation(\''+s.id+'\')"><i class="bi bi-trash"></i></button></div>';
+ }).join('');
+}
+
+let estacionAdminFlow=false;
+document.getElementById('estacionFormModal').addEventListener('hidden.bs.modal',()=>{
+ if(estacionAdminFlow){
+  estacionAdminFlow=false;
+  renderStationsList().then(()=>{
+   new bootstrap.Modal(document.getElementById('stationsModal')).show();
+  });
+ }
+});
+
+function prepararFormEstacion(id){
+ let s=id?stations.find(x=>x.id===id):null;
+ document.getElementById('estacionFormTitulo').textContent=s?'Editar estación':'Nueva estación';
+ document.getElementById('editStationId').value=s?s.id:'';
+ document.getElementById('editStationName').value=s?s.nombre:'';
+ document.getElementById('editStationUid').value=s?s.user_id:'';
+}
+
+function nuevaEstacionAdmin(){
+ cerrarModal('stationsModal',()=>{
+  estacionAdminFlow=true;
+  prepararFormEstacion(null);
+  new bootstrap.Modal(document.getElementById('estacionFormModal')).show();
+ });
+}
+
+function editarEstacionAdmin(id){
+ cerrarModal('stationsModal',()=>{
+  estacionAdminFlow=true;
+  prepararFormEstacion(id);
+  new bootstrap.Modal(document.getElementById('estacionFormModal')).show();
+ });
+}
+
+async function guardarEstacion(){
+ let id=document.getElementById('editStationId').value;
+ let nombre=document.getElementById('editStationName').value.trim();
+ let uid=document.getElementById('editStationUid').value.trim();
+ if(!nombre||!uid){ showToast('Completa el nombre y el UID'); return; }
+ let error;
+ if(id){ ({error}=await sb.from('estaciones').update({nombre,user_id:uid}).eq('id',id)); }
+ else{ ({error}=await sb.from('estaciones').insert([{nombre,user_id:uid}])); }
+ if(error){ showToast('Error: '+error.message); return; }
+ let {data:allStations}=await sb.from('estaciones').select('*').order('nombre');
+ stations=allStations||[];
+ renderStationPill();
+ if(!viewingStationId&&stations[0]) viewingStationId=stations[0].id;
+ bootstrap.Modal.getInstance(document.getElementById('estacionFormModal')).hide();
+ showToast(id?'Estación actualizada':'Estación vinculada correctamente');
+}
+
+function deleteStation(id){
+ cerrarModal('stationsModal',()=>{
+  confirmarEliminar('¿Eliminar esta estación? Sus cámaras también se eliminarán.',async()=>{
+   const {error}=await sb.from('estaciones').delete().eq('id',id);
+   if(error){ showToast('Error: '+error.message); return; }
+   stations=stations.filter(s=>s.id!==id);
+   if(viewingStationId===id) viewingStationId=stations[0]?stations[0].id:null;
+   renderStationPill(); await loadCams(); render(); renderStats();
+   await renderStationsList();
+   showToast('Estación eliminada');
+  },'stationsModal');
+ });
 }
 
 async function enterApp(){
@@ -774,311 +806,7 @@ function mostrarWhatsappPropietario(){
   '<i class="bi bi-whatsapp"></i> '+(p&&p.whatsapp?'WhatsApp: '+p.whatsapp:'Sin WhatsApp registrado para este propietario');
 }
 
-/* ==================== VISTA Y EDICIÓN EN LÍNEA: TERRITORIOS ==================== */
-function renderTerritoriosTable(){
- const tbody = document.getElementById('territoriosTableBody');
- let html = '';
-
- if(editingTerritorioId === 'new'){
-   html += `<tr class="adding-row">
-     <td><input id="inlineAddTerritorioNombre" class="form-control form-control-sm" placeholder="Ej. TV-54 (Trupal)" autofocus></td>
-     <td><span class="text-muted small">—</span></td>
-     <td style="text-align: right;">
-       <button class="btn btn-sm btn-success me-1" onclick="saveInlineTerritorio('new')" title="Guardar"><i class="bi bi-check-lg"></i></button>
-       <button class="btn btn-sm btn-secondary" onclick="cancelInlineTerritorio()" title="Cancelar"><i class="bi bi-x-lg"></i></button>
-     </td>
-   </tr>`;
- } else {
-   html += `<tr class="adding-row">
-     <td colspan="3">
-       <button class="btn btn-sm btn-outline-primary" onclick="startInlineAddTerritorio()"><i class="bi bi-plus-lg me-1"></i>Agregar Territorio</button>
-     </td>
-   </tr>`;
- }
-
- if(!territorios.length && editingTerritorioId !== 'new'){
-   html += `<tr><td colspan="3" class="text-center text-muted py-4">No hay territorios creados en esta estación.</td></tr>`;
- } else {
-   territorios.forEach(t => {
-     let nCams = cams.filter(c => c.territorio_id === t.id).length;
-     if(editingTerritorioId === t.id){
-       html += `<tr>
-         <td><input id="inlineEditTerritorioNombre_${t.id}" class="form-control form-control-sm" value="${t.nombre}" autofocus></td>
-         <td><span class="badge bg-secondary">${nCams} cámaras</span></td>
-         <td style="text-align: right;">
-           <button class="btn btn-sm btn-success me-1" onclick="saveInlineTerritorio('${t.id}')" title="Guardar"><i class="bi bi-check-lg"></i></button>
-           <button class="btn btn-sm btn-secondary" onclick="cancelInlineTerritorio()" title="Cancelar"><i class="bi bi-x-lg"></i></button>
-         </td>
-       </tr>`;
-     } else {
-       let actionsHtml = '';
-       if(deletingTerritorioId === t.id){
-         actionsHtml = `<span class="small text-danger fw-bold me-1">¿Seguro?</span>
-           <button class="btn btn-sm btn-danger me-1" onclick="confirmDeleteInlineTerritorio('${t.id}')"><i class="bi bi-check-lg"></i></button>
-           <button class="btn btn-sm btn-secondary" onclick="cancelDeleteInlineTerritorio()"><i class="bi bi-x-lg"></i></button>`;
-       } else {
-         actionsHtml = `<button class="btn btn-sm btn-outline-secondary me-1" onclick="startInlineEditTerritorio('${t.id}')" title="Editar"><i class="bi bi-pencil"></i></button>
-           <button class="btn btn-sm btn-outline-danger" onclick="startDeleteInlineTerritorio('${t.id}')" title="Eliminar"><i class="bi bi-trash"></i></button>`;
-       }
-
-       html += `<tr>
-         <td class="fw-semibold">${t.nombre}</td>
-         <td><span class="badge bg-secondary">${nCams} cámaras</span></td>
-         <td style="text-align: right;">${actionsHtml}</td>
-       </tr>`;
-     }
-   });
- }
-
- tbody.innerHTML = html;
-}
-
-function startInlineAddTerritorio(){ editingTerritorioId = 'new'; deletingTerritorioId = null; renderTerritoriosTable(); }
-function startInlineEditTerritorio(id){ editingTerritorioId = id; deletingTerritorioId = null; renderTerritoriosTable(); }
-function cancelInlineTerritorio(){ editingTerritorioId = null; renderTerritoriosTable(); }
-
-async function saveInlineTerritorio(id){
- let inputEl = (id === 'new') ? document.getElementById('inlineAddTerritorioNombre') : document.getElementById(`inlineEditTerritorioNombre_${id}`);
- let nombre = inputEl ? inputEl.value.trim() : '';
- if(!nombre){ showToast('Escribe el nombre del territorio'); return; }
- if(!viewingStationId){ showToast('No hay estación seleccionada'); return; }
- 
- let duplicado = territorios.some(t => t.id !== id && t.nombre.trim().toLowerCase() === nombre.toLowerCase());
- if(duplicado){ showToast('Ya existe un territorio con ese nombre'); return; }
-
- let error;
- if(id === 'new'){
-   ({error} = await sb.from('territorios').insert({nombre, estacion_id: viewingStationId}));
- } else {
-   ({error} = await sb.from('territorios').update({nombre}).eq('id', id));
- }
-
- if(error){ showToast('Error: ' + error.message); return; }
- editingTerritorioId = null;
- await loadTerritorios(); await loadCams();
- populateFilterTV(); render(); renderStats();
- renderTerritoriosTable();
- showToast(id === 'new' ? 'Territorio agregado' : 'Territorio actualizado');
-}
-
-function startDeleteInlineTerritorio(id){
- deletingTerritorioId = id;
- editingTerritorioId = null;
- renderTerritoriosTable();
- setTimeout(() => {
-   if(deletingTerritorioId === id){
-     deletingTerritorioId = null;
-     renderTerritoriosTable();
-   }
- }, 4000);
-}
-
-function cancelDeleteInlineTerritorio(){ deletingTerritorioId = null; renderTerritoriosTable(); }
-
-async function confirmDeleteInlineTerritorio(id){
- const {error} = await sb.from('territorios').delete().eq('id', id);
- if(error){ showToast('Error al eliminar: ' + error.message); return; }
- deletingTerritorioId = null;
- await loadTerritorios(); await loadCams();
- populateFilterTV(); render(); renderStats();
- renderTerritoriosTable();
- showToast('Territorio eliminado');
-}
-
-/* ==================== VISTA Y EDICIÓN EN LÍNEA: PROPIETARIOS ==================== */
-function renderPropietariosTable(){
- const tbody = document.getElementById('propietariosTableBody');
- let html = '';
-
- if(editingPropietarioId === 'new'){
-   html += `<tr class="adding-row">
-     <td><input id="inlineAddPropietarioNombre" class="form-control form-control-sm" placeholder="Nombre completo" autofocus></td>
-     <td><input id="inlineAddPropietarioWpp" class="form-control form-control-sm" placeholder="Ej. 51999999999"></td>
-     <td><span class="text-muted small">—</span></td>
-     <td style="text-align: right;">
-       <button class="btn btn-sm btn-success me-1" onclick="saveInlinePropietario('new')" title="Guardar"><i class="bi bi-check-lg"></i></button>
-       <button class="btn btn-sm btn-secondary" onclick="cancelInlinePropietario()" title="Cancelar"><i class="bi bi-x-lg"></i></button>
-     </td>
-   </tr>`;
- } else {
-   html += `<tr class="adding-row">
-     <td colspan="4">
-       <button class="btn btn-sm btn-outline-primary" onclick="startInlineAddPropietario()"><i class="bi bi-plus-lg me-1"></i>Agregar Propietario</button>
-     </td>
-   </tr>`;
- }
-
- if(!propietarios.length && editingPropietarioId !== 'new'){
-   html += `<tr><td colspan="4" class="text-center text-muted py-4">No hay propietarios registrados en esta estación.</td></tr>`;
- } else {
-   propietarios.forEach(p => {
-     let nCams = cams.filter(c => c.propietario_id === p.id).length;
-     if(editingPropietarioId === p.id){
-       html += `<tr>
-         <td><input id="inlineEditPropietarioNombre_${p.id}" class="form-control form-control-sm" value="${p.nombre}" autofocus></td>
-         <td><input id="inlineEditPropietarioWpp_${p.id}" class="form-control form-control-sm" value="${p.whatsapp||''}"></td>
-         <td><span class="badge bg-secondary">${nCams} cámaras</span></td>
-         <td style="text-align: right;">
-           <button class="btn btn-sm btn-success me-1" onclick="saveInlinePropietario('${p.id}')" title="Guardar"><i class="bi bi-check-lg"></i></button>
-           <button class="btn btn-sm btn-secondary" onclick="cancelInlinePropietario()" title="Cancelar"><i class="bi bi-x-lg"></i></button>
-         </td>
-       </tr>`;
-     } else {
-       let actionsHtml = '';
-       if(deletingPropietarioId === p.id){
-         actionsHtml = `<span class="small text-danger fw-bold me-1">¿Seguro?</span>
-           <button class="btn btn-sm btn-danger me-1" onclick="confirmDeleteInlinePropietario('${p.id}')"><i class="bi bi-check-lg"></i></button>
-           <button class="btn btn-sm btn-secondary" onclick="cancelDeleteInlinePropietario()"><i class="bi bi-x-lg"></i></button>`;
-       } else {
-         actionsHtml = `<button class="btn btn-sm btn-outline-secondary me-1" onclick="startInlineEditPropietario('${p.id}')" title="Editar"><i class="bi bi-pencil"></i></button>
-           <button class="btn btn-sm btn-outline-danger" onclick="startDeleteInlinePropietario('${p.id}')" title="Eliminar"><i class="bi bi-trash"></i></button>`;
-       }
-
-       let wppDisplay = p.whatsapp 
-         ? `<a href="https://wa.me/${p.whatsapp}" target="_blank" class="text-success text-decoration-none fw-semibold"><i class="bi bi-whatsapp me-1"></i>${p.whatsapp}</a>`
-         : `<span class="text-muted small">Sin WhatsApp</span>`;
-
-       html += `<tr>
-         <td class="fw-semibold">${p.nombre}</td>
-         <td>${wppDisplay}</td>
-         <td><span class="badge bg-secondary">${nCams} cámaras</span></td>
-         <td style="text-align: right;">${actionsHtml}</td>
-       </tr>`;
-     }
-   });
- }
-
- tbody.innerHTML = html;
-}
-
-function startInlineAddPropietario(){ editingPropietarioId = 'new'; deletingPropietarioId = null; renderPropietariosTable(); }
-function startInlineEditPropietario(id){ editingPropietarioId = id; deletingPropietarioId = null; renderPropietariosTable(); }
-function cancelInlinePropietario(){ editingPropietarioId = null; renderPropietariosTable(); }
-
-async function saveInlinePropietario(id){
- let inputNom = (id === 'new') ? document.getElementById('inlineAddPropietarioNombre') : document.getElementById(`inlineEditPropietarioNombre_${id}`);
- let inputWpp = (id === 'new') ? document.getElementById('inlineAddPropietarioWpp') : document.getElementById(`inlineEditPropietarioWpp_${id}`);
- 
- let nombre = inputNom ? inputNom.value.trim() : '';
- let whatsapp = inputWpp ? inputWpp.value.trim() : '';
-
- if(!nombre){ showToast('Escribe el nombre del propietario'); return; }
- if(!viewingStationId){ showToast('No hay estación seleccionada'); return; }
- 
- let duplicado = propietarios.some(p => p.id !== id && p.nombre.trim().toLowerCase() === nombre.toLowerCase());
- if(duplicado){ showToast('Ya existe un propietario con ese nombre'); return; }
-
- let error;
- if(id === 'new'){
-   ({error} = await sb.from('propietarios').insert({nombre, whatsapp: whatsapp || null, estacion_id: viewingStationId}));
- } else {
-   ({error} = await sb.from('propietarios').update({nombre, whatsapp: whatsapp || null}).eq('id', id));
- }
-
- if(error){ showToast('Error: ' + error.message); return; }
- editingPropietarioId = null;
- await loadPropietarios(); await loadCams();
- render(); renderStats();
- renderPropietariosTable();
- showToast(id === 'new' ? 'Propietario agregado' : 'Propietario actualizado');
-}
-
-function startDeleteInlinePropietario(id){
- deletingPropietarioId = id;
- editingPropietarioId = null;
- renderPropietariosTable();
- setTimeout(() => {
-   if(deletingPropietarioId === id){
-     deletingPropietarioId = null;
-     renderPropietariosTable();
-   }
- }, 4000);
-}
-
-function cancelDeleteInlinePropietario(){ deletingPropietarioId = null; renderPropietariosTable(); }
-
-async function confirmDeleteInlinePropietario(id){
- const {error} = await sb.from('propietarios').delete().eq('id', id);
- if(error){ showToast('Error al eliminar: ' + error.message); return; }
- deletingPropietarioId = null;
- await loadPropietarios(); await loadCams();
- render(); renderStats();
- renderPropietariosTable();
- showToast('Propietario eliminado');
-}
-
-/* ==================== DESPLIEGUE RÁPIDO EN FORMULARIO CÁMARA ==================== */
-function checkInlineQuickAdd(type){
- if(type === 'tv'){
-   const val = document.getElementById('tv').value;
-   if(val === '__new__'){
-     document.getElementById('quickAddTerritorioBox').classList.remove('d-none');
-     document.getElementById('quickTerritorioNombre').focus();
-   } else {
-     document.getElementById('quickAddTerritorioBox').classList.add('d-none');
-   }
- } else if(type === 'propietario'){
-   const val = document.getElementById('propietario').value;
-   if(val === '__new__'){
-     document.getElementById('quickAddPropietarioBox').classList.remove('d-none');
-     document.getElementById('quickPropietarioNombre').focus();
-   } else {
-     document.getElementById('quickAddPropietarioBox').classList.add('d-none');
-     mostrarWhatsappPropietario();
-   }
- }
-}
-
-function closeQuickAdd(type){
- if(type === 'tv'){
-   document.getElementById('quickAddTerritorioBox').classList.add('d-none');
-   document.getElementById('tv').value = '';
- } else if(type === 'propietario'){
-   document.getElementById('quickAddPropietarioBox').classList.add('d-none');
-   document.getElementById('propietario').value = '';
-   mostrarWhatsappPropietario();
- }
-}
-
-async function guardarQuickTerritorio(){
- let nombreInput = document.getElementById('quickTerritorioNombre');
- let nombre = nombreInput.value.trim();
- if(!nombre){ showToast('Ingresa el nombre del territorio'); return; }
- if(!viewingStationId){ showToast('No hay estación seleccionada'); return; }
-
- const {data, error} = await sb.from('territorios').insert({nombre, estacion_id: viewingStationId}).select().single();
- if(error){ showToast('Error: ' + error.message); return; }
- 
- await loadTerritorios();
- document.getElementById('tv').value = data.id;
- document.getElementById('quickAddTerritorioBox').classList.add('d-none');
- nombreInput.value = '';
- populateFilterTV(); renderStats();
- showToast('Territorio creado y seleccionado');
-}
-
-async function guardarQuickPropietario(){
- let nombreInput = document.getElementById('quickPropietarioNombre');
- let wppInput = document.getElementById('quickPropietarioWpp');
- let nombre = nombreInput.value.trim();
- let wpp = wppInput.value.trim();
-
- if(!nombre){ showToast('Ingresa el nombre del propietario'); return; }
- if(!viewingStationId){ showToast('No hay estación seleccionada'); return; }
-
- const {data, error} = await sb.from('propietarios').insert({nombre, whatsapp: wpp || null, estacion_id: viewingStationId}).select().single();
- if(error){ showToast('Error: ' + error.message); return; }
-
- await loadPropietarios();
- document.getElementById('propietario').value = data.id;
- document.getElementById('quickAddPropietarioBox').classList.add('d-none');
- nombreInput.value = ''; wppInput.value = '';
- mostrarWhatsappPropietario();
- renderStats();
- showToast('Propietario creado y seleccionado');
-}
-
-/* ==================== MAPA Y LÓGICA DE CÁMARAS ==================== */
+/* ==================== ESTADO GENERAL ==================== */
 let cams=[];
 const modal=new bootstrap.Modal(document.getElementById('camModal'));
 const map=L.map('map').setView([-8.111,-79.029],12);
@@ -1086,12 +814,38 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 const clusterGroup=L.markerClusterGroup({maxClusterRadius:45});
 map.addLayer(clusterGroup);
 
-let markers=[];let markersById={};let deleteId=null;
-const detailsModal=new bootstrap.Modal(document.getElementById('detailsModal'));
-const deleteModal=new bootstrap.Modal(document.getElementById('deleteModal'));
+let markers=[];let markersById={};let deleteId=null;const toast=new bootstrap.Toast(document.getElementById('liveToast'),{delay:3500}); const detailsModal=new bootstrap.Modal(document.getElementById('detailsModal'));const deleteModal=new bootstrap.Modal(document.getElementById('deleteModal'));function showToast(t){toast.hide();toastMsg.textContent=t;toast.show();}
+const genericDeleteModal=new bootstrap.Modal(document.getElementById('genericDeleteModal'));
 
-let selecting=false,tempMarker=null,pickerMap=null,pickerMarker=null,selectedLatLng=null;
-const pickerModal=new bootstrap.Modal(document.getElementById('mapPickerModal'));
+/* Cierra un modal (si está abierto) y solo cuando terminó de cerrarse del todo, ejecuta "luego" */
+function cerrarModal(modalId,luego){
+ const el=document.getElementById(modalId);
+ if(!el.classList.contains('show')){ luego(); return; }
+ el.addEventListener('hidden.bs.modal',function handler(){
+  el.removeEventListener('hidden.bs.modal',handler);
+  luego();
+ },{once:true});
+ bootstrap.Modal.getInstance(el).hide();
+}
+
+/* Muestra el modal genérico de confirmar eliminación. Si se indica returnToModalId,
+   al terminar (se confirme o se cancele) reabre ese modal automáticamente. */
+function confirmarEliminar(mensaje,callback,returnToModalId){
+ document.getElementById('genericDeleteText').innerHTML=mensaje;
+ let confirmado=false;
+ document.getElementById('genericDeleteConfirmBtn').onclick=()=>{
+  confirmado=true;
+  genericDeleteModal.hide();
+ };
+ const modalEl=document.getElementById('genericDeleteModal');
+ modalEl.addEventListener('hidden.bs.modal',async function handler(){
+  modalEl.removeEventListener('hidden.bs.modal',handler);
+  if(confirmado) await callback();
+  if(returnToModalId) new bootstrap.Modal(document.getElementById(returnToModalId)).show();
+ },{once:true});
+ genericDeleteModal.show();
+}
+let selecting=false,tempMarker=null,pickerMap=null,pickerMarker=null,selectedLatLng=null; const pickerModal=new bootstrap.Modal(document.getElementById('mapPickerModal'));
 let filtroEstado='', filtroTV='';
 
 function openForm(c=null){
@@ -1110,11 +864,9 @@ function openForm(c=null){
  lat.value=c?.lat||'';
  lng.value=c?.lng||'';
  maps.value=c?.maps||'';
- propietario.value=c?.propietario_id||'';
- mostrarWhatsappPropietario();
+propietario.value=c?.propietario_id||'';
+mostrarWhatsappPropietario();
  foto.value='';
- document.getElementById('quickAddTerritorioBox').classList.add('d-none');
- document.getElementById('quickAddPropietarioBox').classList.add('d-none');
  document.getElementById('fotoActualNota').classList.toggle('d-none', !(c && c.foto));
  [nombre,direccion,tv,tipo,cabina,estado,lat,lng,propietario].forEach(el=>el.classList.remove('is-invalid-field'));
  document.getElementById('btnSeleccionarMapa').classList.remove('is-invalid-field');
@@ -1126,6 +878,64 @@ function toggleTipoOtro(){
  if(tipo.value!=='Otro') tipoOtro.value='';
 }
 
+function onCambioTerritorio(){
+ if(tv.value!=='__new__'){ document.getElementById('nuevoTerritorioInline').classList.add('d-none'); return; }
+ tv.value='';
+ document.getElementById('inlineTerritorioNombre').value='';
+ document.getElementById('nuevoTerritorioInline').classList.remove('d-none');
+ document.getElementById('inlineTerritorioNombre').focus();
+}
+
+function cancelarTerritorioInline(){
+ document.getElementById('nuevoTerritorioInline').classList.add('d-none');
+ tv.value='';
+}
+
+async function guardarTerritorioInline(){
+ let nombre=document.getElementById('inlineTerritorioNombre').value.trim();
+ if(!nombre){ showToast('Escribe el nombre del territorio'); return; }
+ if(!viewingStationId){ showToast('No hay estación seleccionada'); return; }
+ let duplicado=territorios.some(t=>t.nombre.trim().toLowerCase()===nombre.toLowerCase());
+ if(duplicado){ showToast('Ya existe un territorio con ese nombre'); return; }
+ const {data,error}=await sb.from('territorios').insert({nombre,estacion_id:viewingStationId}).select().single();
+ if(error){ showToast(error.code==='23505'?'Ya existe un territorio con ese nombre':'Error: '+error.message); return; }
+ await loadTerritorios();
+ tv.value=data.id;
+ document.getElementById('nuevoTerritorioInline').classList.add('d-none');
+ showToast('Territorio agregado');
+}
+
+function onCambioPropietario(){
+ if(propietario.value!=='__new__'){ document.getElementById('nuevoPropietarioInline').classList.add('d-none'); mostrarWhatsappPropietario(); return; }
+ propietario.value='';
+ document.getElementById('inlinePropietarioNombre').value='';
+ document.getElementById('inlinePropietarioWpp').value='';
+ document.getElementById('nuevoPropietarioInline').classList.remove('d-none');
+ document.getElementById('inlinePropietarioNombre').focus();
+}
+
+function cancelarPropietarioInline(){
+ document.getElementById('nuevoPropietarioInline').classList.add('d-none');
+ propietario.value='';
+ mostrarWhatsappPropietario();
+}
+
+async function guardarPropietarioInline(){
+ let nombre=document.getElementById('inlinePropietarioNombre').value.trim();
+ let wpp=document.getElementById('inlinePropietarioWpp').value.trim();
+ if(!nombre){ showToast('Escribe el nombre del propietario'); return; }
+ if(!viewingStationId){ showToast('No hay estación seleccionada'); return; }
+ let duplicado=propietarios.some(p=>p.nombre.trim().toLowerCase()===nombre.toLowerCase());
+ if(duplicado){ showToast('Ya existe un propietario con ese nombre'); return; }
+ const {data,error}=await sb.from('propietarios').insert({nombre,whatsapp:wpp||null,estacion_id:viewingStationId}).select().single();
+ if(error){ showToast(error.code==='23505'?'Ya existe un propietario con ese nombre':'Error: '+error.message); return; }
+ await loadPropietarios();
+ propietario.value=data.id;
+ document.getElementById('nuevoPropietarioInline').classList.add('d-none');
+ mostrarWhatsappPropietario();
+ showToast('Propietario agregado');
+}
+
 function estadoInfo(v){
  const map={
   operativa:{label:'Operativa', color:'#22C55E'},
@@ -1134,6 +944,15 @@ function estadoInfo(v){
   desconectada:{label:'Desconectada', color:'#6B7280'}
  };
  return map[v]||null;
+}
+
+/* Normaliza texto para búsquedas: minúsculas, sin tildes, sin espacios de más */
+function normalizarTexto(s){
+ return (s||'').toString()
+  .normalize('NFD').replace(/[\u0300-\u036f]/g,'') // quita tildes/acentos
+  .toLowerCase()
+  .replace(/\s+/g,' ')
+  .trim();
 }
 
 function seleccionarMapa(){
@@ -1150,13 +969,7 @@ function seleccionarMapa(){
       });
    }
    pickerMap.invalidateSize();
-   if(lat.value&&lng.value){
-     let ll=L.latLng(parseFloat(lat.value),parseFloat(lng.value));
-     pickerMap.setView(ll,16);
-     if(pickerMarker)pickerMap.removeLayer(pickerMarker);
-     pickerMarker=L.marker(ll).addTo(pickerMap);
-     selectedLatLng=ll;
-   }
+ if(lat.value&&lng.value){let ll=L.latLng(parseFloat(lat.value),parseFloat(lng.value)); pickerMap.setView(ll,16); if(pickerMarker)pickerMap.removeLayer(pickerMarker); pickerMarker=L.marker(ll).addTo(pickerMap); selectedLatLng=ll;}
  },300);
 }
 
@@ -1169,7 +982,16 @@ function confirmLocation(){
  document.getElementById('mapPickerModal').addEventListener('hidden.bs.modal',()=>modal.show(),{once:true});
 }
 
-/* ==================== GUARDAR CÁMARA ==================== */
+map.on('click',e=>{
+ if(!selecting)return;
+ lat.value=e.latlng.lat.toFixed(6);
+ lng.value=e.latlng.lng.toFixed(6);
+ if(tempMarker) map.removeLayer(tempMarker);
+ tempMarker=L.marker(e.latlng).addTo(map);
+ selecting=false;
+});
+
+/* ==================== VALIDACIÓN + GUARDAR ==================== */
 async function saveCam(){
  if(window.saving)return;
  [nombre,direccion,tv,tipo,cabina,estado,lat,lng,propietario].forEach(el=>el.classList.remove('is-invalid-field'));
@@ -1240,7 +1062,7 @@ function comprimirImagen(file,maxWidth=900,calidad=0.75){
     canvas.getContext('2d').drawImage(img,0,0,w,h);
     resolve(canvas.toDataURL('image/jpeg',calidad));
    };
-   img.onerror=()=>resolve(e.target.result);
+   img.onerror=()=>resolve(e.target.result); // si falla el procesamiento, se sube tal cual
    img.src=e.target.result;
   };
   reader.readAsDataURL(file);
@@ -1255,15 +1077,14 @@ function delCam(id){
  deleteText.innerHTML='¿Está seguro de eliminar la cámara <b>'+(c?.nombre||'')+'</b>?';
  deleteModal.show();
 }
-document.addEventListener('DOMContentLoaded',()=>{
- confirmDeleteBtn.onclick=async()=>{
-  const {error}=await sb.from('camaras').delete().eq('id',deleteId);
-  if(error){ showToast('Error al eliminar: '+error.message); deleteModal.hide(); return; }
-  await loadCams(); populateFilterTV(); render(); renderStats(); deleteModal.hide();
-  showToast('Cámara eliminada');
- };
-});
+document.addEventListener('DOMContentLoaded',()=>{confirmDeleteBtn.onclick=async()=>{
+ const {error}=await sb.from('camaras').delete().eq('id',deleteId);
+ if(error){ showToast('Error al eliminar: '+error.message); deleteModal.hide(); return; }
+ await loadCams(); populateFilterTV(); render(); renderStats(); deleteModal.hide();
+ showToast('Cámara eliminada');
+};});
 
+/* ==================== UBICAR EN MAPA (con clustering) ==================== */
 function focusCam(id){
  let c=cams.find(x=>x.id==id);
  if(!c||!c.lat||!c.lng) return;
@@ -1279,10 +1100,11 @@ function focusCam(id){
 let highlightCircle=null;
 function highlightMarker(latlng){
  if(highlightCircle) map.removeLayer(highlightCircle);
- highlightCircle=L.circleMarker(latlng,{radius:14,color:'#ff6a00',weight:3,fillColor:'#ff6a00',fillOpacity:0.45}).addTo(map);
+ highlightCircle=L.circleMarker(latlng,{radius:14,color:'#ff6a00',weight:3,fillColor:'#ff6a00',fillOpacity:0.45,className:'cam-highlight-pulse'}).addTo(map);
  setTimeout(()=>{ if(highlightCircle){map.removeLayer(highlightCircle);highlightCircle=null;} },1800);
 }
 
+/* ==================== CÓMO LLEGAR ==================== */
 function comoLlegar(id){
  let c=cams.find(x=>x.id==id);
  if(!c||!c.lat||!c.lng){ showToast('Esta cámara no tiene coordenadas'); return; }
@@ -1298,10 +1120,26 @@ function comoLlegar(id){
 }
 
 function cambiarVista(vista){
- document.getElementById('viewMode').value=String(vista);
- document.getElementById('btnLista').classList.toggle('active',vista==1);
- document.getElementById('btnGrid').classList.toggle('active',vista==2);
- render();
+document.getElementById('viewMode').value=String(vista);
+document.getElementById('btnLista').classList.toggle('active',vista==1);
+document.getElementById('btnGrid').classList.toggle('active',vista==2);
+render();
+}
+
+function irAMapa(){
+ document.getElementById('map').scrollIntoView({behavior:'smooth',block:'start'});
+ document.querySelectorAll('.mtab').forEach(b=>b.classList.remove('active'));
+ document.querySelector('.mtab').classList.add('active');
+}
+
+function irACamaras(){
+ document.getElementById('list').scrollIntoView({behavior:'smooth',block:'start'});
+ document.querySelectorAll('.mtab').forEach(b=>b.classList.remove('active'));
+ document.querySelectorAll('.mtab')[1].classList.add('active');
+}
+
+function abrirMas(){
+ new bootstrap.Modal(document.getElementById('masModal')).show();
 }
 
 function camIcon(color){
@@ -1315,6 +1153,7 @@ function camIcon(color){
  });
 }
 
+/* ==================== FILTROS ==================== */
 function setFiltroEstado(v){ filtroEstado=v; renderFilterChips(); render(); }
 function setFiltroTV(v){ filtroTV=v; render(); }
 
@@ -1333,6 +1172,7 @@ function populateFilterTV(){
  filtroTV=sel.value;
 }
 
+/* ==================== ESTADÍSTICAS ==================== */
 function renderStats(){
  let propias=cams;
  const estados=[['operativa','Operativas','#22c55e'],['inoperativa','Inoperativas','#ef4444'],['mantenimiento','Mantenimiento','#eab308'],['desconectada','Desconectadas','#6b7280']];
@@ -1340,12 +1180,14 @@ function renderStats(){
  let nOperativa=propias.filter(c=>c.estado==='operativa').length;
  let nInoperativa=propias.filter(c=>c.estado==='inoperativa').length;
 
+ // KPIs arriba
  document.getElementById('kpiRow').innerHTML=
   '<div class="kpi g1"><div class="l">Total cámaras</div><div class="n">'+total+'</div></div>'+
   '<div class="kpi g2"><div class="l">Operativas</div><div class="n">'+nOperativa+'</div></div>'+
   '<div class="kpi flat"><div class="l">Territorios</div><div class="n">'+territorios.length+'</div></div>'+
   '<div class="kpi flat red"><div class="l">Inoperativas</div><div class="n">'+nInoperativa+'</div></div>';
 
+ // Dona de estados (porcentajes reales)
  let acc=0; let segments=[];
  estados.forEach(e=>{
   let n=propias.filter(c=>c.estado===e[0]).length;
@@ -1353,7 +1195,7 @@ function renderStats(){
   segments.push(e[2]+' '+acc+'% '+(acc+pct)+'%');
   acc+=pct;
  });
- if(acc<100&&segments.length) segments[segments.length-1]=segments[segments.length-1].replace(/(\d+)%$/,'100%');
+ if(acc<100) segments[segments.length-1]=segments[segments.length-1].replace(/(\d+)%$/,'100%');
  let donutEl=document.getElementById('donutChart');
  donutEl.style.background=total?('conic-gradient('+segments.join(',')+')'):'var(--panel2)';
  document.getElementById('donutTotal').textContent=total;
@@ -1363,6 +1205,7 @@ function renderStats(){
   return '<div><span class="dot" style="background:'+e[2]+'"></span>'+e[1]+' <span class="val">'+pct+'%</span></div>';
  }).join('');
 
+ // Desglose por territorio
  let el=document.getElementById('territoryBreakdown');
  if(!territorios.length){
   el.innerHTML='<div style="color:var(--muted)">Sin territorios aún</div>';
@@ -1374,20 +1217,25 @@ function renderStats(){
  }
 }
 
+/* ==================== RENDER PRINCIPAL ==================== */
 function render(){
  clusterGroup.clearLayers();
  markers=[];
  markersById={};
- let q=document.getElementById('search').value.toLowerCase();
+ let q=normalizarTexto(document.getElementById('search').value);
  let propias=cams;
- let countPill = document.getElementById('countPill');
- if(countPill) countPill.textContent=propias.length;
- let data=propias.filter(c=>
-  // ---- AQUÍ SE CORRIGIÓ EL ERROR CONCATENANDO EL NOMBRE DEL PROPIETARIO ----
-  (JSON.stringify(c)+' '+(territoriosById[c.territorio_id]?.nombre||'')+' '+(propietariosById[c.propietario_id]?.nombre||'')).toLowerCase().includes(q) &&
-  (filtroEstado===''||c.estado===filtroEstado) &&
-  (filtroTV===''||c.territorio_id===filtroTV)
- );
+ document.getElementById('countPill').textContent=propias.length;
+ let data=propias.filter(c=>{
+  let tvNombre=territoriosById[c.territorio_id]?.nombre||'';
+  let propNombre=propietariosById[c.propietario_id]?.nombre||'';
+  let propWpp=propietariosById[c.propietario_id]?.whatsapp||'';
+  let eiLabel=estadoInfo(c.estado)?.label||'';
+  let texto=normalizarTexto([c.nombre,c.direccion,tvNombre,propNombre,propWpp,c.tipo,c.cabina,eiLabel,c.maps].join(' '));
+  return texto.includes(q) &&
+   (filtroEstado===''||c.estado===filtroEstado) &&
+   (filtroTV===''||c.territorio_id===filtroTV);
+ });
+ document.getElementById('searchCount').textContent=data.length+' resultado'+(data.length===1?'':'s')+' encontrado'+(data.length===1?'':'s');
  list.className=(document.getElementById('viewMode')&&document.getElementById('viewMode').value==='2')?'row g-2':'';
  list.innerHTML='';
  if(!data.length){
@@ -1416,13 +1264,13 @@ ${c.cabina?'<span class="info-badge"><i class="bi bi-pc-display"></i>'+c.cabina+
 <button class="btn btn-sm btn-danger" onclick="delCam('${c.id}')" title="Eliminar"><i class="bi bi-trash-fill"></i></button>
 </div>`;
   if(vistaActual==='grid'){
-   inner.innerHTML=`${c.foto?'<img class="preview mb-2" src="'+c.foto+'">':''}
+   inner.innerHTML=`${c.foto?'<img class="preview mb-2 cam-clickable-img" onclick="focusCam(\''+c.id+'\')" title="Ver en mapa" src="'+c.foto+'">':''}
 <div class="cam-name">${c.nombre||''}</div>
 ${c.direccion?'<div class="cam-meta"><i class="bi bi-signpost-split"></i>'+c.direccion+'</div>':''}
 ${badgesHtml}${actionsHtml}`;
   }else{
    inner.innerHTML=`<div class="d-flex align-items-center gap-2">
-<div class="cam-thumb">${thumbHtml}</div>
+<div class="cam-thumb cam-clickable-img" onclick="focusCam('${c.id}')" title="Ver en mapa">${thumbHtml}</div>
 <div style="min-width:0;flex:1;">
 <div class="cam-name">${c.nombre||''}</div>
 ${c.direccion?'<div class="cam-meta"><i class="bi bi-signpost-split"></i>'+c.direccion+'</div>':''}
@@ -1446,6 +1294,7 @@ ${badgesHtml}${actionsHtml}`;
   }
  });
 }
+
 
 function viewDetails(id){
  let c=cams.find(x=>x.id==id); if(!c)return;
@@ -1473,7 +1322,7 @@ function viewDetails(id){
  detailsModal.show();
 }
 
-/* ==================== EXPORTACIÓN & UTILIDADES ==================== */
+/* ==================== EXPORTACIÓN ==================== */
 function datosExport(){
  return cams.map(c=>({
   Nombre:c.nombre||'', Direccion:c.direccion||'', TV:territoriosById[c.territorio_id]?.nombre||'', Tipo:c.tipo||'',
@@ -1509,139 +1358,303 @@ function exportPDF(){
  doc.save('camaras_'+currentStationName().replace(/\s+/g,'_')+'.pdf');
 }
 
-function generarReporte(){
- if(!cams.length) return 'No hay cámaras registradas en esta estación.';
- let grupos={};
- cams.forEach(c=>{
-  let key=c.territorio_id||'sin_tv';
-  if(!grupos[key]) grupos[key]={nombre:territoriosById[c.territorio_id]?.nombre||'Sin TV asignado',operativas:0,inoperativas:0,nombresInoperativas:[]};
-  if(c.estado==='operativa') grupos[key].operativas++;
-  if(c.estado==='inoperativa'){ grupos[key].inoperativas++; grupos[key].nombresInoperativas.push(c.nombre); }
+/* ==================== NAVEGACIÓN ENTRE PÁGINAS ==================== */
+function mostrarVista(v){
+ ['Mapa','Territorios','Propietarios','Estadisticas'].forEach(nombre=>{
+  document.getElementById('view'+nombre).classList.toggle('d-none', nombre!==v);
  });
- let keys=Object.keys(grupos).sort((a,b)=>grupos[a].nombre.localeCompare(grupos[b].nombre,undefined,{numeric:true}));
- return keys.map(k=>{
-  let g=grupos[k];
-  let bloque='📍'+g.nombre+
-   '\n✅ Cámaras operativas: '+String(g.operativas).padStart(2,'0')+
-   '\n🚫 Cámaras inoperativas: '+String(g.inoperativas).padStart(2,'0');
-  if(g.inoperativas>0){
-   bloque+='\n'+g.nombresInoperativas.map(n=>'* '+n).join('\n');
+ document.querySelectorAll('#sidebar .navicon').forEach(b=>b.classList.remove('active'));
+ document.querySelectorAll('.mtab').forEach(b=>b.classList.remove('active'));
+ let navBtn=document.getElementById('nav'+v);
+ if(navBtn) navBtn.classList.add('active');
+ if(v==='Mapa'){
+  document.querySelector('.mtab').classList.add('active');
+  setTimeout(()=>map.invalidateSize(),100);
+ }
+ if(v==='Territorios') renderTerritoriosTabla();
+ if(v==='Propietarios') renderPropietariosTabla();
+ if(v==='Estadisticas') renderEstadisticasCharts();
+}
+
+/* ==================== PÁGINA: TERRITORIOS (tabla editable en línea) ==================== */
+let editandoTerritorioId=null, filaNuevaTerritorio=false, confirmandoEliminarTerritorio=null;
+let ordenTerritorios={campo:'nombre',dir:1}, paginaTerritorios=1;
+const PAG_SIZE=10;
+
+function ordenarTerritorios(campo){
+ if(ordenTerritorios.campo===campo) ordenTerritorios.dir*=-1; else { ordenTerritorios.campo=campo; ordenTerritorios.dir=1; }
+ renderTerritoriosTabla();
+}
+function irPaginaTerritorios(n){ paginaTerritorios=n; renderTerritoriosTabla(); }
+function nuevaFilaTerritorio(){ editandoTerritorioId=null; filaNuevaTerritorio=true; renderTerritoriosTabla(); setTimeout(()=>document.getElementById('inRowTerritorioNombre_nuevo')?.focus(),50); }
+function cancelarEdicionTerritorio(){ editandoTerritorioId=null; filaNuevaTerritorio=false; renderTerritoriosTabla(); }
+function editarFilaTerritorio(id){ editandoTerritorioId=id; filaNuevaTerritorio=false; confirmandoEliminarTerritorio=null; renderTerritoriosTabla(); }
+function pedirConfirmarEliminarTerritorio(id){ confirmandoEliminarTerritorio=id; renderTerritoriosTabla(); }
+function cancelarEliminarTerritorio(){ confirmandoEliminarTerritorio=null; renderTerritoriosTabla(); }
+
+async function guardarFilaTerritorio(id){
+ let inputId=id?('inRowTerritorioNombre_'+id):'inRowTerritorioNombre_nuevo';
+ let nombre=document.getElementById(inputId).value.trim();
+ if(!nombre){ showToast('Escribe el nombre del territorio'); return; }
+ let duplicado=territorios.some(t=>t.id!==id && t.nombre.trim().toLowerCase()===nombre.toLowerCase());
+ if(duplicado){ showToast('Ya existe un territorio con ese nombre'); return; }
+ let error;
+ if(id){ ({error}=await sb.from('territorios').update({nombre}).eq('id',id)); }
+ else{ ({error}=await sb.from('territorios').insert({nombre,estacion_id:viewingStationId})); }
+ if(error){ showToast(error.code==='23505'?'Ya existe un territorio con ese nombre':'Error: '+error.message); return; }
+ editandoTerritorioId=null; filaNuevaTerritorio=false;
+ await loadTerritorios(); await loadCams();
+ populateFilterTV(); render(); renderStats(); renderTerritoriosTabla();
+ showToast(id?'Territorio actualizado':'Territorio agregado');
+}
+
+async function confirmarEliminarTerritorioFila(id){
+ const {error}=await sb.from('territorios').delete().eq('id',id);
+ confirmandoEliminarTerritorio=null;
+ if(error){ showToast('Error: '+error.message); renderTerritoriosTabla(); return; }
+ await loadTerritorios(); await loadCams();
+ populateFilterTV(); render(); renderStats(); renderTerritoriosTabla();
+ showToast('Territorio eliminado');
+}
+
+function renderTerritoriosTabla(){
+ let q=normalizarTexto(document.getElementById('searchTerritorios').value);
+ let filtrados=territorios.filter(t=>normalizarTexto(t.nombre).includes(q));
+ filtrados.sort((a,b)=>{
+  let campo=ordenTerritorios.campo;
+  let va=campo==='n'?cams.filter(c=>c.territorio_id===a.id).length:a.nombre.toLowerCase();
+  let vb=campo==='n'?cams.filter(c=>c.territorio_id===b.id).length:b.nombre.toLowerCase();
+  return va<vb?-ordenTerritorios.dir:va>vb?ordenTerritorios.dir:0;
+ });
+ document.getElementById('territoriosCountPill').textContent=territorios.length;
+ let totalPag=Math.max(1,Math.ceil(filtrados.length/PAG_SIZE));
+ if(paginaTerritorios>totalPag) paginaTerritorios=totalPag;
+ let pageItems=filtrados.slice((paginaTerritorios-1)*PAG_SIZE,(paginaTerritorios-1)*PAG_SIZE+PAG_SIZE);
+
+ let html='';
+ if(filaNuevaTerritorio){
+  html+='<tr><td><input id="inRowTerritorioNombre_nuevo" class="form-control form-control-sm" placeholder="Nombre del territorio"></td><td>—</td>'+
+  '<td class="text-end"><button class="btn btn-sm btn-success" onclick="guardarFilaTerritorio(null)"><i class="bi bi-check-lg"></i></button> '+
+  '<button class="btn btn-sm btn-secondary" onclick="cancelarEdicionTerritorio()"><i class="bi bi-x-lg"></i></button></td></tr>';
+ }
+ if(!pageItems.length){
+  html+='<tr><td colspan="3" class="text-center py-4" style="color:var(--muted)">'+(territorios.length?'No hay territorios que coincidan con la búsqueda':'Aún no tienes territorios creados')+'</td></tr>';
+ }else{
+  pageItems.forEach(t=>{
+   let n=cams.filter(c=>c.territorio_id===t.id).length;
+   if(editandoTerritorioId===t.id){
+    html+='<tr><td><input id="inRowTerritorioNombre_'+t.id+'" class="form-control form-control-sm" value="'+t.nombre+'"></td><td>'+n+'</td>'+
+    '<td class="text-end"><button class="btn btn-sm btn-success" onclick="guardarFilaTerritorio(\''+t.id+'\')"><i class="bi bi-check-lg"></i></button> '+
+    '<button class="btn btn-sm btn-secondary" onclick="cancelarEdicionTerritorio()"><i class="bi bi-x-lg"></i></button></td></tr>';
+   }else if(confirmandoEliminarTerritorio===t.id){
+    html+='<tr><td>'+t.nombre+'</td><td>'+n+'</td>'+
+    '<td class="text-end"><span class="small me-2">'+(n>0?'¿Eliminar? ('+n+' quedan sin TV)':'¿Eliminar?')+'</span>'+
+    '<button class="btn btn-sm btn-danger" onclick="confirmarEliminarTerritorioFila(\''+t.id+'\')"><i class="bi bi-check-lg"></i></button> '+
+    '<button class="btn btn-sm btn-secondary" onclick="cancelarEliminarTerritorio()"><i class="bi bi-x-lg"></i></button></td></tr>';
+   }else{
+    html+='<tr><td>'+t.nombre+'</td><td>'+n+'</td>'+
+    '<td class="text-end"><button class="btn btn-sm btn-outline-secondary" onclick="editarFilaTerritorio(\''+t.id+'\')"><i class="bi bi-pencil"></i></button> '+
+    '<button class="btn btn-sm btn-outline-danger" onclick="pedirConfirmarEliminarTerritorio(\''+t.id+'\')"><i class="bi bi-trash"></i></button></td></tr>';
+   }
+  });
+ }
+ document.getElementById('tbodyTerritorios').innerHTML=html;
+ document.getElementById('territoriosPagInfo').textContent=filtrados.length+' territorio(s) · página '+paginaTerritorios+' de '+totalPag;
+ let pagBtns='';
+ for(let i=1;i<=totalPag;i++){ pagBtns+='<button class="btn '+(i===paginaTerritorios?'btn-primary':'btn-secondary')+'" onclick="irPaginaTerritorios('+i+')">'+i+'</button>'; }
+ document.getElementById('territoriosPagBtns').innerHTML=pagBtns;
+}
+
+/* ==================== PÁGINA: PROPIETARIOS (tabla editable en línea) ==================== */
+let editandoPropietarioId=null, filaNuevaPropietario=false, confirmandoEliminarPropietario=null;
+let ordenPropietarios={campo:'nombre',dir:1}, paginaPropietarios=1;
+
+function ordenarPropietarios(campo){
+ if(ordenPropietarios.campo===campo) ordenPropietarios.dir*=-1; else { ordenPropietarios.campo=campo; ordenPropietarios.dir=1; }
+ renderPropietariosTabla();
+}
+function irPaginaPropietarios(n){ paginaPropietarios=n; renderPropietariosTabla(); }
+function nuevaFilaPropietario(){ editandoPropietarioId=null; filaNuevaPropietario=true; renderPropietariosTabla(); setTimeout(()=>document.getElementById('inRowPropietarioNombre_nuevo')?.focus(),50); }
+function cancelarEdicionPropietario(){ editandoPropietarioId=null; filaNuevaPropietario=false; renderPropietariosTabla(); }
+function editarFilaPropietario(id){ editandoPropietarioId=id; filaNuevaPropietario=false; confirmandoEliminarPropietario=null; renderPropietariosTabla(); }
+function pedirConfirmarEliminarPropietario(id){ confirmandoEliminarPropietario=id; renderPropietariosTabla(); }
+function cancelarEliminarPropietario(){ confirmandoEliminarPropietario=null; renderPropietariosTabla(); }
+
+async function guardarFilaPropietario(id){
+ let suf=id?id:'nuevo';
+ let nombre=document.getElementById('inRowPropietarioNombre_'+suf).value.trim();
+ let wpp=document.getElementById('inRowPropietarioWpp_'+suf).value.trim();
+ if(!nombre){ showToast('Escribe el nombre del propietario'); return; }
+ let duplicado=propietarios.some(p=>p.id!==id && p.nombre.trim().toLowerCase()===nombre.toLowerCase());
+ if(duplicado){ showToast('Ya existe un propietario con ese nombre'); return; }
+ let error;
+ if(id){ ({error}=await sb.from('propietarios').update({nombre,whatsapp:wpp||null}).eq('id',id)); }
+ else{ ({error}=await sb.from('propietarios').insert({nombre,whatsapp:wpp||null,estacion_id:viewingStationId})); }
+ if(error){ showToast(error.code==='23505'?'Ya existe un propietario con ese nombre':'Error: '+error.message); return; }
+ editandoPropietarioId=null; filaNuevaPropietario=false;
+ await loadPropietarios(); await loadCams();
+ render(); renderStats(); renderPropietariosTabla();
+ showToast(id?'Propietario actualizado':'Propietario agregado');
+}
+
+async function confirmarEliminarPropietarioFila(id){
+ const {error}=await sb.from('propietarios').delete().eq('id',id);
+ confirmandoEliminarPropietario=null;
+ if(error){ showToast('Error: '+error.message); renderPropietariosTabla(); return; }
+ await loadPropietarios(); await loadCams();
+ render(); renderStats(); renderPropietariosTabla();
+ showToast('Propietario eliminado');
+}
+
+function renderPropietariosTabla(){
+ let q=normalizarTexto(document.getElementById('searchPropietarios').value);
+ let filtrados=propietarios.filter(p=>normalizarTexto(p.nombre+' '+(p.whatsapp||'')).includes(q));
+ filtrados.sort((a,b)=>{
+  let campo=ordenPropietarios.campo;
+  let va=campo==='n'?cams.filter(c=>c.propietario_id===a.id).length:campo==='whatsapp'?(a.whatsapp||'').toLowerCase():a.nombre.toLowerCase();
+  let vb=campo==='n'?cams.filter(c=>c.propietario_id===b.id).length:campo==='whatsapp'?(b.whatsapp||'').toLowerCase():b.nombre.toLowerCase();
+  return va<vb?-ordenPropietarios.dir:va>vb?ordenPropietarios.dir:0;
+ });
+ document.getElementById('propietariosCountPill').textContent=propietarios.length;
+ let totalPag=Math.max(1,Math.ceil(filtrados.length/PAG_SIZE));
+ if(paginaPropietarios>totalPag) paginaPropietarios=totalPag;
+ let pageItems=filtrados.slice((paginaPropietarios-1)*PAG_SIZE,(paginaPropietarios-1)*PAG_SIZE+PAG_SIZE);
+
+ let html='';
+ if(filaNuevaPropietario){
+  html+='<tr><td><input id="inRowPropietarioNombre_nuevo" class="form-control form-control-sm" placeholder="Nombre"></td>'+
+  '<td><input id="inRowPropietarioWpp_nuevo" class="form-control form-control-sm" placeholder="WhatsApp (opcional)"></td><td>—</td>'+
+  '<td class="text-end"><button class="btn btn-sm btn-success" onclick="guardarFilaPropietario(null)"><i class="bi bi-check-lg"></i></button> '+
+  '<button class="btn btn-sm btn-secondary" onclick="cancelarEdicionPropietario()"><i class="bi bi-x-lg"></i></button></td></tr>';
+ }
+ if(!pageItems.length){
+  html+='<tr><td colspan="4" class="text-center py-4" style="color:var(--muted)">'+(propietarios.length?'No hay propietarios que coincidan con la búsqueda':'Aún no tienes propietarios creados')+'</td></tr>';
+ }else{
+  pageItems.forEach(p=>{
+   let n=cams.filter(c=>c.propietario_id===p.id).length;
+   if(editandoPropietarioId===p.id){
+    html+='<tr><td><input id="inRowPropietarioNombre_'+p.id+'" class="form-control form-control-sm" value="'+p.nombre+'"></td>'+
+    '<td><input id="inRowPropietarioWpp_'+p.id+'" class="form-control form-control-sm" value="'+(p.whatsapp||'')+'"></td><td>'+n+'</td>'+
+    '<td class="text-end"><button class="btn btn-sm btn-success" onclick="guardarFilaPropietario(\''+p.id+'\')"><i class="bi bi-check-lg"></i></button> '+
+    '<button class="btn btn-sm btn-secondary" onclick="cancelarEdicionPropietario()"><i class="bi bi-x-lg"></i></button></td></tr>';
+   }else if(confirmandoEliminarPropietario===p.id){
+    html+='<tr><td>'+p.nombre+'</td><td>'+(p.whatsapp||'—')+'</td><td>'+n+'</td>'+
+    '<td class="text-end"><span class="small me-2">'+(n>0?'¿Eliminar? ('+n+' quedan sin dueño)':'¿Eliminar?')+'</span>'+
+    '<button class="btn btn-sm btn-danger" onclick="confirmarEliminarPropietarioFila(\''+p.id+'\')"><i class="bi bi-check-lg"></i></button> '+
+    '<button class="btn btn-sm btn-secondary" onclick="cancelarEliminarPropietario()"><i class="bi bi-x-lg"></i></button></td></tr>';
+   }else{
+    html+='<tr><td>'+p.nombre+'</td><td>'+(p.whatsapp||'—')+'</td><td>'+n+'</td>'+
+    '<td class="text-end"><button class="btn btn-sm btn-outline-secondary" onclick="editarFilaPropietario(\''+p.id+'\')"><i class="bi bi-pencil"></i></button> '+
+    '<button class="btn btn-sm btn-outline-danger" onclick="pedirConfirmarEliminarPropietario(\''+p.id+'\')"><i class="bi bi-trash"></i></button></td></tr>';
+   }
+  });
+ }
+ document.getElementById('tbodyPropietarios').innerHTML=html;
+ document.getElementById('propietariosPagInfo').textContent=filtrados.length+' propietario(s) · página '+paginaPropietarios+' de '+totalPag;
+ let pagBtns='';
+ for(let i=1;i<=totalPag;i++){ pagBtns+='<button class="btn '+(i===paginaPropietarios?'btn-primary':'btn-secondary')+'" onclick="irPaginaPropietarios('+i+')">'+i+'</button>'; }
+ document.getElementById('propietariosPagBtns').innerHTML=pagBtns;
+}
+
+/* ==================== ESTADÍSTICAS (Chart.js) ==================== */
+let chartTerritorio=null, chartPropietario=null, chartTipos=null;
+function renderEstadisticasCharts(){
+ const colorEje='#8b8aa3', colorGrid='rgba(139,138,163,.15)';
+ const animCfg={duration:1000,easing:'easeOutQuart'};
+
+ let labelsT=territorios.map(t=>t.nombre);
+ let dataT=territorios.map(t=>cams.filter(c=>c.territorio_id===t.id).length);
+ if(chartTerritorio) chartTerritorio.destroy();
+ chartTerritorio=new Chart(document.getElementById('chartTerritorio').getContext('2d'),{
+  type:'bar',
+  data:{labels:labelsT.length?labelsT:['Sin territorios'],datasets:[{label:'Cámaras',data:dataT.length?dataT:[0],backgroundColor:'#8b5cf6',borderRadius:6}]},
+  options:{animation:animCfg,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{precision:0,color:colorEje},grid:{color:colorGrid}},x:{ticks:{color:colorEje},grid:{display:false}}}}
+ });
+
+ let labelsP=propietarios.map(p=>p.nombre);
+ let dataP=propietarios.map(p=>cams.filter(c=>c.propietario_id===p.id).length);
+ if(chartPropietario) chartPropietario.destroy();
+ chartPropietario=new Chart(document.getElementById('chartPropietario').getContext('2d'),{
+  type:'bar',
+  data:{labels:labelsP.length?labelsP:['Sin propietarios'],datasets:[{label:'Cámaras',data:dataP.length?dataP:[0],backgroundColor:'#22d3ee',borderRadius:6}]},
+  options:{indexAxis:'y',animation:animCfg,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,ticks:{precision:0,color:colorEje},grid:{color:colorGrid}},y:{ticks:{color:colorEje},grid:{display:false}}}}
+ });
+
+ const tiposBase=['Hikvision','Dahua','Imou','Hilook','Otro'];
+ let tiposExtra=[...new Set(cams.map(c=>c.tipo).filter(t=>t&&!tiposBase.includes(t)))];
+ let labelsTipo=[...tiposBase,...tiposExtra];
+ let dataTipo=labelsTipo.map(t=>cams.filter(c=>c.tipo===t).length);
+ if(chartTipos) chartTipos.destroy();
+ chartTipos=new Chart(document.getElementById('chartTipos').getContext('2d'),{
+  type:'doughnut',
+  data:{labels:labelsTipo,datasets:[{data:dataTipo,backgroundColor:['#8b5cf6','#22d3ee','#ec4899','#f59e0b','#22c55e','#ef4444','#6b7280','#3b82f6']}]},
+  options:{animation:animCfg,plugins:{legend:{position:'bottom',labels:{color:colorEje,boxWidth:10,font:{size:10}}}}}
+ });
+}
+
+/* ==================== REPORTE DE TEXTO POR TV ==================== */
+function generarReporte(modo){
+ modo=modo||'ambos';
+ if(!territorios.length) return 'No hay territorios registrados en esta estación.';
+ let ordenados=[...territorios].sort((a,b)=>a.nombre.localeCompare(b.nombre,undefined,{numeric:true}));
+ return ordenados.map(t=>{
+  let camsT=cams.filter(c=>c.territorio_id===t.id);
+  let operativas=camsT.filter(c=>c.estado==='operativa');
+  let inoperativas=camsT.filter(c=>c.estado==='inoperativa');
+  let bloque='📍'+t.nombre;
+  bloque+='\n✅ Cámaras operativas: '+String(operativas.length).padStart(2,'0');
+  if((modo==='ambos'||modo==='operativas') && operativas.length){
+   bloque+='\n'+operativas.map(c=>'* '+c.nombre).join('\n');
+  }
+  bloque+='\n🚫 Cámaras inoperativas: '+String(inoperativas.length).padStart(2,'0');
+  if((modo==='ambos'||modo==='inoperativas') && inoperativas.length){
+   bloque+='\n'+inoperativas.map(c=>'* '+c.nombre).join('\n');
   }
   return bloque;
  }).join('\n\n');
 }
 
+function modoReporteActual(){
+ let sel=document.querySelector('input[name="modoReporte"]:checked');
+ return sel?sel.value:'ambos';
+}
+
+function actualizarReporte(){
+ document.getElementById('reporteTexto').value=generarReporte(modoReporteActual());
+}
+
 function abrirReporte(){
- document.getElementById('reporteTexto').value=generarReporte();
+ actualizarReporte();
  new bootstrap.Modal(document.getElementById('reporteModal')).show();
 }
 
 function copiarReporte(){
  let ta=document.getElementById('reporteTexto');
  ta.select();
- navigator.clipboard.writeText(ta.value).then(()=>{ showToast('Reporte copiado'); }).catch(()=>{
+ navigator.clipboard.writeText(ta.value).then(()=>{
+  showToast('Reporte copiado');
+ }).catch(()=>{
   document.execCommand('copy');
   showToast('Reporte copiado');
  });
 }
 
-function abrirMas(){
- new bootstrap.Modal(document.getElementById('masModal')).show();
+/* ==================== TEMA CLARO/OSCURO ==================== */
+function aplicarTema(tema){
+ document.body.classList.toggle('light',tema==='light');
+ let icon=document.getElementById('themeIcon');
+ if(icon) icon.className=tema==='light'?'bi bi-moon-stars-fill':'bi bi-sun-fill';
+ localStorage.setItem('atlas_theme',tema);
 }
-
-/* ==================== GRÁFICAS (CHART.JS) ==================== */
-let chartTerritoriosInstance = null;
-let chartPropietariosInstance = null;
-let chartTiposInstance = null;
-
-function renderCharts() {
-  if (!document.getElementById('chartTerritorios')) return;
-
-  // 1. Procesar y agrupar los datos
-  let countTerritorios = {};
-  let countPropietarios = {};
-  let countTipos = {};
-
-  cams.forEach(c => {
-    // Agrupar por Territorio
-    let tv = territoriosById[c.territorio_id]?.nombre || 'Sin TV';
-    countTerritorios[tv] = (countTerritorios[tv] || 0) + 1;
-
-    // Agrupar por Propietario
-    let prop = propietariosById[c.propietario_id]?.nombre || 'Sin Propietario';
-    countPropietarios[prop] = (countPropietarios[prop] || 0) + 1;
-
-    // Agrupar por Tipo de cámara
-    let tipo = c.tipo || 'No especificado';
-    countTipos[tipo] = (countTipos[tipo] || 0) + 1;
-  });
-
-  // Configuración de colores adaptada al Tema (Claro/Oscuro)
-  const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
-  Chart.defaults.color = isDark ? '#eef0f5' : '#1e293b';
-  Chart.defaults.borderColor = isDark ? '#2a2440' : '#e2e8f0';
-  const pieBorderColor = isDark ? '#161221' : '#ffffff';
-
-  // --- Gráfica 1: Barras por Territorio ---
-  const ctxTerritorios = document.getElementById('chartTerritorios').getContext('2d');
-  if(chartTerritoriosInstance) chartTerritoriosInstance.destroy();
-  chartTerritoriosInstance = new Chart(ctxTerritorios, {
-    type: 'bar',
-    data: {
-      labels: Object.keys(countTerritorios),
-      datasets: [{
-        label: 'Cantidad de Cámaras',
-        data: Object.values(countTerritorios),
-        backgroundColor: 'rgba(139, 92, 246, 0.7)', // Morado
-        borderColor: '#8b5cf6',
-        borderWidth: 1,
-        borderRadius: 4
-      }]
-    },
-    options: { responsive: true, plugins: { legend: { display: false } } }
-  });
-
-  // --- Gráfica 2: Barras por Propietario ---
-  const ctxPropietarios = document.getElementById('chartPropietarios').getContext('2d');
-  if(chartPropietariosInstance) chartPropietariosInstance.destroy();
-  chartPropietariosInstance = new Chart(ctxPropietarios, {
-    type: 'bar',
-    data: {
-      labels: Object.keys(countPropietarios),
-      datasets: [{
-        label: 'Cantidad de Cámaras',
-        data: Object.values(countPropietarios),
-        backgroundColor: 'rgba(8, 145, 178, 0.7)', // Cyan
-        borderColor: '#0891b2',
-        borderWidth: 1,
-        borderRadius: 4
-      }]
-    },
-    options: { responsive: true, plugins: { legend: { display: false } } }
-  });
-
-  // --- Gráfica 3: Pastel por Tipos de Cámara ---
-  const ctxTipos = document.getElementById('chartTipos').getContext('2d');
-  if(chartTiposInstance) chartTiposInstance.destroy();
-  chartTiposInstance = new Chart(ctxTipos, {
-    type: 'pie',
-    data: {
-      labels: Object.keys(countTipos),
-      datasets: [{
-        data: Object.values(countTipos),
-        backgroundColor: ['#8b5cf6', '#0891b2', '#ec4899', '#22c55e', '#eab308', '#64748b'],
-        borderWidth: 2,
-        borderColor: pieBorderColor
-      }]
-    },
-    options: { responsive: true, maintainAspectRatio: false }
-  });
+function toggleTheme(){
+ let actual=document.body.classList.contains('light')?'light':'dark';
+ aplicarTema(actual==='light'?'dark':'light');
 }
+aplicarTema(localStorage.getItem('atlas_theme')||'dark');
 
-/* ==================== INICIO AUTOLOAD ==================== */
+/* ==================== INICIO ==================== */
 let ultimoCorreo=localStorage.getItem('atlas_last_email');
 if(ultimoCorreo) document.getElementById('loginEmail').value=ultimoCorreo;
-
 (async function init(){
  const {data:{session}}=await sb.auth.getSession();
  if(session){
