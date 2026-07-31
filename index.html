@@ -271,7 +271,7 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
 <button class="navicon" id="navTerritorios" onclick="switchView('territorios')" title="Territorios"><i class="bi bi-geo-alt-fill"></i></button>
 <button class="navicon" id="navPropietarios" onclick="switchView('propietarios')" title="Propietarios"><i class="bi bi-person-lines-fill"></i></button>
 <button class="navicon" id="navEstadisticas" onclick="switchView('estadisticas')" title="Estadísticas"><i class="bi bi-bar-chart-fill"></i></button>
-<button class="navicon" onclick="abrirReporte()" title="Reporte de texto"><i class="bi bi-chat-square-text"></i></button>
+<button class="navicon" id="navReporte" onclick="switchView('reporte')" title="Reporte de texto"><i class="bi bi-chat-square-text"></i></button>
 <button class="navicon" onclick="exportExcel()" title="Exportar Excel"><i class="bi bi-file-earmark-excel"></i></button>
 <button class="navicon" onclick="exportPDF()" title="Exportar PDF"><i class="bi bi-file-earmark-pdf"></i></button>
 <button class="navicon d-none" id="btnGestionEstaciones" onclick="openStationsAdmin()" title="Gestionar estaciones"><i class="bi bi-buildings-fill"></i></button>
@@ -338,10 +338,13 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
 <!-- VISTA COMPLETA DEDICADA: TERRITORIOS -->
 <div id="viewTerritorios" class="d-none">
 <div class="catalog-card">
-<div class="d-flex align-items-center justify-content-between mb-3">
+<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
 <div>
   <h4 class="m-0 fw-bold"><i class="bi bi-geo-alt-fill text-purple me-2"></i>Catálogo de Territorios Vecinales (TV)</h4>
   <p class="text-muted small m-0">Gestiona y consulta los territorios asignados a esta estación</p>
+</div>
+<div style="min-width: 250px;">
+  <input id="searchTerritorios" class="form-control form-control-sm" placeholder="Buscar territorio..." oninput="renderTerritoriosTable()">
 </div>
 </div>
 <div class="table-responsive">
@@ -364,10 +367,13 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
 <!-- VISTA COMPLETA DEDICADA: PROPIETARIOS -->
 <div id="viewPropietarios" class="d-none">
 <div class="catalog-card">
-<div class="d-flex align-items-center justify-content-between mb-3">
+<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
 <div>
   <h4 class="m-0 fw-bold"><i class="bi bi-person-lines-fill text-cyan me-2"></i>Catálogo de Propietarios</h4>
   <p class="text-muted small m-0">Administra la lista de propietarios y su contacto directo por WhatsApp</p>
+</div>
+<div style="min-width: 250px;">
+  <input id="searchPropietarios" class="form-control form-control-sm" placeholder="Buscar propietario o WhatsApp..." oninput="renderPropietariosTable()">
 </div>
 </div>
 <div class="table-responsive">
@@ -426,6 +432,29 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
   </div>
 </div>
 
+<!-- VISTA COMPLETA DEDICADA: REPORTE DE TEXTO -->
+<div id="viewReporte" class="d-none">
+  <div class="catalog-card">
+    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+      <div>
+        <h4 class="m-0 fw-bold"><i class="bi bi-chat-square-text text-purple me-2"></i>Reporte de Texto para WhatsApp</h4>
+        <p class="text-muted small m-0">Genera y copia el reporte detallado por territorios</p>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <select id="reporteFiltroSelect" class="form-select form-select-sm" onchange="actualizarReporteFiltro()">
+          <option value="inoperativas">Solo Inoperativas</option>
+          <option value="operativas">Solo Operativas</option>
+          <option value="ambas">Ambas (Operativas e Inoperativas)</option>
+        </select>
+        <button class="btn btn-success btn-sm" onclick="copiarReporte()"><i class="bi bi-clipboard-check me-1"></i>Copiar</button>
+      </div>
+    </div>
+    <div class="card p-3" style="background: var(--panel2); border-color: var(--border);">
+      <textarea id="reporteTexto" class="form-control" rows="18" readonly style="font-family:monospace;font-size:.85rem; background: var(--panel); color: var(--text); border-color: var(--border);"></textarea>
+    </div>
+  </div>
+</div>
+
 </div>
 </div>
 
@@ -443,7 +472,7 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
 <div class="modal-header"><h5>Más opciones</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
 <div class="modal-body d-grid gap-2">
 <button class="btn btn-secondary text-start" onclick="cerrarMasYEjecutar(toggleTheme)"><i class="bi bi-sun-fill me-2"></i>Cambiar Tema (Claro/Oscuro)</button>
-<button class="btn btn-secondary text-start" onclick="cerrarMasYEjecutar(abrirReporte)"><i class="bi bi-chat-square-text me-2"></i>Reporte de texto</button>
+<button class="btn btn-secondary text-start" onclick="cerrarMasYEjecutar(()=>switchView('reporte'))"><i class="bi bi-chat-square-text me-2"></i>Reporte de texto</button>
 <button class="btn btn-secondary text-start" onclick="cerrarMasYEjecutar(exportExcel)"><i class="bi bi-file-earmark-excel me-2"></i>Exportar Excel</button>
 <button class="btn btn-secondary text-start" onclick="cerrarMasYEjecutar(exportPDF)"><i class="bi bi-file-earmark-pdf me-2"></i>Exportar PDF</button>
 <button class="btn btn-secondary text-start d-none" id="btnGestionEstacionesMobile" onclick="cerrarMasYEjecutar(openStationsAdmin)"><i class="bi bi-buildings-fill me-2"></i>Gestionar estaciones</button>
@@ -571,25 +600,6 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
 <!-- MODALES DE DETALLE Y ELIMINACIÓN GENERAL -->
 <div class="modal fade" id="detailsModal"><div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title"><i class="bi bi-info-circle-fill me-1"></i>Detalles de la cámara</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body" id="detailsBody"></div></div></div></div>
 <div class="modal fade" id="deleteModal"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header bg-danger text-white"><h5 class="modal-title">Confirmar eliminación</h5></div><div class="modal-body" id="deleteText"></div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button class="btn btn-danger" id="confirmDeleteBtn">Eliminar</button></div></div></div></div>
-<div class="modal fade" id="reporteModal">
-<div class="modal-dialog modal-dialog-scrollable">
-<div class="modal-content">
-<div class="modal-header"><h5><i class="bi bi-chat-square-text me-1"></i>Reporte de texto</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
-<div class="modal-body">
-<div class="mb-3">
-  <label class="form-label small text-muted mb-1">Detalle a incluir en el reporte:</label>
-  <select id="reporteFiltroSelect" class="form-select form-select-sm" onchange="actualizarReporteFiltro()">
-    <option value="inoperativas">Solo Inoperativas</option>
-    <option value="operativas">Solo Operativas</option>
-    <option value="ambas">Ambas (Operativas e Inoperativas)</option>
-  </select>
-</div>
-<textarea id="reporteTexto" class="form-control" rows="16" readonly style="font-family:monospace;font-size:.85rem;"></textarea>
-</div>
-<div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button><button class="btn btn-success" onclick="copiarReporte()"><i class="bi bi-clipboard-check me-1"></i>Copiar reporte</button></div>
-</div>
-</div>
-</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -664,7 +674,6 @@ function toggleMasModal(){
   const masModalEl = document.getElementById('masModal');
   const modalInstance = bootstrap.Modal.getOrCreateInstance(masModalEl);
   
-  // Comprobar si el modal está visible actualmente para alternar su comportamiento
   if(masModalEl.classList.contains('show')){
     modalInstance.hide();
     limpiarBackdrops();
@@ -694,11 +703,13 @@ function switchView(viewName){
  document.getElementById('viewTerritorios').classList.toggle('d-none', viewName !== 'territorios');
  document.getElementById('viewPropietarios').classList.toggle('d-none', viewName !== 'propietarios');
  document.getElementById('viewEstadisticas')?.classList.toggle('d-none', viewName !== 'estadisticas');
+ document.getElementById('viewReporte')?.classList.toggle('d-none', viewName !== 'reporte');
 
  document.getElementById('navMapa').classList.toggle('active', viewName === 'mapa');
  document.getElementById('navTerritorios').classList.toggle('active', viewName === 'territorios');
  document.getElementById('navPropietarios').classList.toggle('active', viewName === 'propietarios');
  document.getElementById('navEstadisticas')?.classList.toggle('active', viewName === 'estadisticas');
+ document.getElementById('navReporte')?.classList.toggle('active', viewName === 'reporte');
 
  document.getElementById('mtabMapa')?.classList.toggle('active', viewName === 'mapa');
  document.getElementById('mtabTerritorios')?.classList.toggle('active', viewName === 'territorios');
@@ -717,6 +728,9 @@ function switchView(viewName){
  } else if(viewName === 'estadisticas'){
    titleEl.innerHTML = `<i class="bi bi-bar-chart-fill text-purple"></i> Estadísticas`;
    renderCharts();
+ } else if(viewName === 'reporte'){
+   titleEl.innerHTML = `<i class="bi bi-chat-square-text text-purple"></i> Reporte de texto`;
+   actualizarReporteFiltro();
  }
 
  if(viewName === 'mapa'){
@@ -793,6 +807,7 @@ async function cambiarEstacionVista(id){
  if(activeView==='territorios') renderTerritoriosTable();
  if(activeView==='propietarios') renderPropietariosTable();
  if(activeView==='estadisticas') renderCharts();
+ if(activeView==='reporte') actualizarReporteFiltro();
 }
 
 async function enterApp(){
@@ -862,6 +877,7 @@ function mostrarWhatsappPropietario(){
 /* ==================== VISTA Y EDICIÓN EN LÍNEA: TERRITORIOS ==================== */
 function renderTerritoriosTable(){
  const tbody = document.getElementById('territoriosTableBody');
+ const q = (document.getElementById('searchTerritorios')?.value || '').trim().toLowerCase();
  let html = '';
 
  if(editingTerritorioId === 'new'){
@@ -881,10 +897,12 @@ function renderTerritoriosTable(){
    </tr>`;
  }
 
- if(!territorios.length && editingTerritorioId !== 'new'){
-   html += `<tr><td colspan="3" class="text-center text-muted py-4">No hay territorios creados en esta estación.</td></tr>`;
+ let filteredTerritorios = territorios.filter(t => t.nombre.toLowerCase().includes(q));
+
+ if(!filteredTerritorios.length && editingTerritorioId !== 'new'){
+   html += `<tr><td colspan="3" class="text-center text-muted py-4">No se encontraron territorios.</td></tr>`;
  } else {
-   territorios.forEach(t => {
+   filteredTerritorios.forEach(t => {
      let nCams = cams.filter(c => c.territorio_id === t.id).length;
      if(editingTerritorioId === t.id){
        html += `<tr>
@@ -973,6 +991,7 @@ async function confirmDeleteInlineTerritorio(id){
 /* ==================== VISTA Y EDICIÓN EN LÍNEA: PROPIETARIOS ==================== */
 function renderPropietariosTable(){
  const tbody = document.getElementById('propietariosTableBody');
+ const q = (document.getElementById('searchPropietarios')?.value || '').trim().toLowerCase();
  let html = '';
 
  if(editingPropietarioId === 'new'){
@@ -993,10 +1012,12 @@ function renderPropietariosTable(){
    </tr>`;
  }
 
- if(!propietarios.length && editingPropietarioId !== 'new'){
-   html += `<tr><td colspan="4" class="text-center text-muted py-4">No hay propietarios registrados en esta estación.</td></tr>`;
+ let filteredPropietarios = propietarios.filter(p => (p.nombre + ' ' + (p.whatsapp || '')).toLowerCase().includes(q));
+
+ if(!filteredPropietarios.length && editingPropietarioId !== 'new'){
+   html += `<tr><td colspan="4" class="text-center text-muted py-4">No se encontraron propietarios.</td></tr>`;
  } else {
-   propietarios.forEach(p => {
+   filteredPropietarios.forEach(p => {
      let nCams = cams.filter(c => c.propietario_id === p.id).length;
      if(editingPropietarioId === p.id){
        html += `<tr>
@@ -1431,7 +1452,6 @@ function renderStats(){
   '<div class="kpi flat"><div class="l">Territorios</div><div class="n">'+territorios.length+'</div></div>'+
   '<div class="kpi flat red"><div class="l">Inoperativas</div><div class="n">'+nInoperativa+'</div></div>';
 
- // Actualizar la dona principal usando Chart.js (animado)
  let ctxDonut = document.getElementById('donutChart').getContext('2d');
  if(window.donutChartInstance) window.donutChartInstance.destroy();
  
@@ -1488,7 +1508,6 @@ function render(){
   (filtroTV===''||c.territorio_id===filtroTV)
  );
  
- // Actualizar el contador total de resultados encontrados
  let resultCountEl = document.getElementById('searchResultCount');
  if(resultCountEl) {
    resultCountEl.textContent = data.length + ' resultado' + (data.length === 1 ? '' : 's');
@@ -1622,23 +1641,18 @@ function exportPDF(){
  doc.save('camaras_'+currentStationName().replace(/\s+/g,'_')+'.pdf');
 }
 
-/* Generador del Reporte para WhatsApp corregido estrictamente */
 function generarReporteFiltro(filtro){
  if(!territorios.length && !cams.length) return 'No hay cámaras registradas en esta estación.';
  
  let grupos = {};
- 
- // 1. Inicializar siempre con TODOS los territorios para que no se omita a los que tienen 0
  territorios.forEach(t => {
    grupos[t.id] = { nombre: t.nombre, operativas: 0, inoperativas: 0, nomsOp: [], nomsInop: [] };
  });
 
- // Cámaras que puedan estar huérfanas sin TV asignado
  if(cams.some(c => !c.territorio_id)){
    grupos['sin_tv'] = { nombre: 'Sin TV asignado', operativas: 0, inoperativas: 0, nomsOp: [], nomsInop: [] };
  }
 
- // 2. Acumular las métricas correspondientes por territorio
  cams.forEach(c => {
   let key = c.territorio_id || 'sin_tv';
   if(!grupos[key]) grupos[key] = { nombre: 'TV Desconocido', operativas: 0, inoperativas: 0, nomsOp: [], nomsInop: [] };
@@ -1653,7 +1667,6 @@ function generarReporteFiltro(filtro){
   }
  });
 
- // 3. Ordenar y renderizar contenido asegurando el filtrado estricto solicitado
  let keys = Object.keys(grupos).sort((a,b) => grupos[a].nombre.localeCompare(grupos[b].nombre, undefined, {numeric: true}));
  
  return keys.map(k => {
@@ -1673,7 +1686,6 @@ function generarReporteFiltro(filtro){
     }
     bloque += '\n🚫 Cámaras inoperativas: ' + String(g.inoperativas).padStart(2,'0');
   } else {
-    // ambas
     bloque += '\n✅ Cámaras operativas: ' + String(g.operativas).padStart(2,'0');
     if(g.operativas > 0) {
       bloque += '\n' + g.nomsOp.map(n => '* ' + n).join('\n');
@@ -1688,21 +1700,16 @@ function generarReporteFiltro(filtro){
  }).join('\n\n');
 }
 
-function abrirReporte(){
- let selectEl = document.getElementById('reporteFiltroSelect');
- if(selectEl) selectEl.value = 'inoperativas';
- actualizarReporteFiltro();
- new bootstrap.Modal(document.getElementById('reporteModal')).show();
-}
-
 function actualizarReporteFiltro(){
  let selectEl = document.getElementById('reporteFiltroSelect');
  let filtro = selectEl ? selectEl.value : 'inoperativas';
- document.getElementById('reporteTexto').value = generarReporteFiltro(filtro);
+ let ta = document.getElementById('reporteTexto');
+ if(ta) ta.value = generarReporteFiltro(filtro);
 }
 
 function copiarReporte(){
  let ta=document.getElementById('reporteTexto');
+ if(!ta) return;
  ta.select();
  navigator.clipboard.writeText(ta.value).then(()=>{ showToast('Reporte copiado exitosamente'); }).catch(()=>{
   document.execCommand('copy');
@@ -1750,10 +1757,7 @@ function renderCharts() {
   Chart.defaults.borderColor = isDark ? '#2a2440' : '#e2e8f0';
   const pieBorderColor = isDark ? '#161221' : '#ffffff';
 
-  const baseAnimation = {
-    duration: 1000,
-    easing: 'easeOutQuart'
-  };
+  const baseAnimation = { duration: 1000, easing: 'easeOutQuart' };
 
   const ctxTerritorios = document.getElementById('chartTerritorios').getContext('2d');
   if(chartTerritoriosInstance) chartTerritoriosInstance.destroy();
@@ -1817,12 +1821,7 @@ function renderCharts() {
     options: { 
       responsive: true, 
       maintainAspectRatio: false, 
-      animation: {
-        animateScale: true,
-        animateRotate: true,
-        duration: 1000,
-        easing: 'easeOutQuart'
-      }
+      animation: { animateScale: true, animateRotate: true, duration: 1000, easing: 'easeOutQuart' }
     }
   });
 }
