@@ -435,7 +435,7 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
 <button class="mtab" id="mtabTerritorios" onclick="switchView('territorios')"><i class="bi bi-geo-alt-fill"></i>Territ.</button>
 <button class="mtab" id="mtabPropietarios" onclick="switchView('propietarios')"><i class="bi bi-person-lines-fill"></i>Propiet.</button>
 <button class="mtab" id="mtabEstadisticas" onclick="switchView('estadisticas')"><i class="bi bi-bar-chart-fill"></i>Estad.</button>
-<button class="mtab" onclick="abrirMas()"><i class="bi bi-grid-3x3-gap-fill"></i>Más</button>
+<button class="mtab" onclick="toggleMasModal()"><i class="bi bi-grid-3x3-gap-fill"></i>Más</button>
 </div>
 
 <!-- MODAL MÁS OPCIONES -->
@@ -660,11 +660,18 @@ function limpiarBackdrops() {
   document.body.style.paddingRight = '';
 }
 
-function abrirMas(){
-  limpiarBackdrops();
+function toggleMasModal(){
   const masModalEl = document.getElementById('masModal');
   const modalInstance = bootstrap.Modal.getOrCreateInstance(masModalEl);
-  modalInstance.show();
+  
+  // Comprobar si el modal está visible actualmente para alternar su comportamiento
+  if(masModalEl.classList.contains('show')){
+    modalInstance.hide();
+    limpiarBackdrops();
+  } else {
+    limpiarBackdrops();
+    modalInstance.show();
+  }
 }
 
 function cerrarMasYEjecutar(callback) {
