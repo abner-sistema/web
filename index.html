@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
 <style>
@@ -366,7 +367,12 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
 <div id="list"></div>
 </div>
 </div>
-<div class="col-lg-6" id="mapColWrap">
+<div class="col-lg-6" id="mapColWrap" style="position:relative;">
+<div id="dibujoBar" class="d-none" style="position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:900;background:var(--panel);border:1px solid var(--border);border-radius:999px;padding:8px 10px 8px 16px;display:flex;align-items:center;gap:10px;box-shadow:0 6px 20px rgba(0,0,0,.4);max-width:92%;">
+<span id="dibujoBarTexto" style="font-size:.8rem;"></span>
+<button class="btn btn-sm btn-success d-none" id="btnGuardarEdicionZona" onclick="guardarEdicionZona()"><i class="bi bi-check-lg"></i> Guardar</button>
+<button class="btn btn-sm btn-secondary" onclick="cancelarDibujoZona()"><i class="bi bi-x-lg"></i> Cancelar</button>
+</div>
 <div id="map"></div>
 </div>
 <div class="col-lg-2">
@@ -761,6 +767,7 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -993,13 +1000,14 @@ async function loadCams(){
 
 let territorios=[]; let territoriosById={};
 async function loadTerritorios(){
- if(!viewingStationId){ territorios=[]; territoriosById={}; return; }
+ if(!viewingStationId){ territorios=[]; territoriosById={}; if(typeof renderTerritorioPolygons==='function') renderTerritorioPolygons(); return; }
  const {data,error}=await sb.from('territorios').select('*').eq('estacion_id',viewingStationId).order('nombre');
- if(error){ showToast('Error cargando territorios: '+error.message); territorios=[]; territoriosById={}; return; }
+ if(error){ showToast('Error cargando territorios: '+error.message); territorios=[]; territoriosById={}; if(typeof renderTerritorioPolygons==='function') renderTerritorioPolygons(); return; }
  territorios=data||[];
  territoriosById={};
  territorios.forEach(t=>territoriosById[t.id]=t);
  poblarSelectTerritorio();
+ if(typeof renderTerritorioPolygons==='function') renderTerritorioPolygons();
 }
 
 function poblarSelectTerritorio(){
@@ -1298,10 +1306,17 @@ function renderTerritoriosTable(){
            <button class="btn btn-sm btn-outline-danger" onclick="startDeleteInlineTerritorio('${t.id}')" title="Eliminar"><i class="bi bi-trash"></i></button>`;
        }
 
+       let zonaHtml = '';
+       if(t.poligono && Array.isArray(t.poligono) && t.poligono.length>=3){
+         zonaHtml = `<button class="btn btn-sm btn-outline-secondary me-1" onclick="editarZonaTerritorio('${t.id}')" title="Editar zona"><i class="bi bi-pentagon" style="color:${colorTerritorio(t.id)}"></i></button>
+           <button class="btn btn-sm btn-outline-danger me-1" onclick="borrarZonaTerritorio('${t.id}')" title="Quitar zona"><i class="bi bi-x-hexagon"></i></button>`;
+       } else {
+         zonaHtml = `<button class="btn btn-sm btn-outline-secondary me-1" onclick="dibujarZonaTerritorio('${t.id}')" title="Dibujar zona en el mapa"><i class="bi bi-pentagon"></i></button>`;
+       }
        html += `<tr>
          <td class="fw-semibold">${t.nombre}</td>
          <td><span class="badge bg-secondary">${nCams} cámaras</span></td>
-         <td style="text-align: right;">${actionsHtml}</td>
+         <td style="text-align: right;">${zonaHtml}${actionsHtml}</td>
        </tr>`;
      }
    });
@@ -1565,6 +1580,102 @@ const map=L.map('map').setView([-8.111,-79.029],12);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 const clusterGroup=L.markerClusterGroup({maxClusterRadius:45});
 map.addLayer(clusterGroup);
+
+/* ==================== ZONAS DE COBERTURA POR TERRITORIO ==================== */
+const territorioPolygonsLayer=L.layerGroup().addTo(map);
+const PALETA_TERRITORIOS=['#8b5cf6','#22d3ee','#ec4899','#f97316','#14b8a6','#6366f1','#84cc16','#e11d48','#0ea5e9','#a855f7','#f59e0b','#10b981'];
+function colorTerritorio(id){
+ let hash=0;
+ for(let i=0;i<id.length;i++) hash=(hash*31+id.charCodeAt(i))>>>0;
+ return PALETA_TERRITORIOS[hash%PALETA_TERRITORIOS.length];
+}
+function renderTerritorioPolygons(){
+ territorioPolygonsLayer.clearLayers();
+ territorios.forEach(t=>{
+  if(t.poligono && Array.isArray(t.poligono) && t.poligono.length>=3){
+   let color=colorTerritorio(t.id);
+   let poly=L.polygon(t.poligono,{color:color,weight:2,fillColor:color,fillOpacity:.15});
+   poly._territorioId=t.id;
+   poly.bindTooltip(t.nombre,{sticky:true});
+   territorioPolygonsLayer.addLayer(poly);
+  }
+ });
+}
+
+let dibujoActivo=null, edicionActiva=null;
+
+function dibujarZonaTerritorio(id){
+ switchView('mapa');
+ let t=territorios.find(x=>x.id===id);
+ if(!t) return;
+ document.getElementById('dibujoBar').classList.remove('d-none');
+ document.getElementById('dibujoBarTexto').textContent='Dibujando zona de "'+t.nombre+'" — clic para agregar puntos, doble clic para terminar';
+ let drawer=new L.Draw.Polygon(map,{shapeOptions:{color:colorTerritorio(id)}});
+ drawer.enable();
+ dibujoActivo={territorioId:id,drawHandler:drawer};
+}
+
+map.on(L.Draw.Event.CREATED, async function(e){
+ if(!dibujoActivo) return;
+ let latlngs=e.layer.getLatLngs()[0].map(p=>[p.lat,p.lng]);
+ let id=dibujoActivo.territorioId;
+ ocultarBarraDibujo();
+ const {error}=await sb.from('territorios').update({poligono:latlngs}).eq('id',id);
+ if(error){ showToast('Error al guardar la zona: '+error.message); return; }
+ await loadTerritorios(); renderTerritorioPolygons();
+ if(typeof renderTerritoriosTable==='function') renderTerritoriosTable();
+ showToast('Zona guardada');
+});
+
+function editarZonaTerritorio(id){
+ switchView('mapa');
+ let t=territorios.find(x=>x.id===id);
+ if(!t||!t.poligono) return;
+ let layer=null;
+ territorioPolygonsLayer.eachLayer(l=>{ if(l._territorioId===id) layer=l; });
+ if(!layer) return;
+ layer.editing.enable();
+ document.getElementById('dibujoBar').classList.remove('d-none');
+ document.getElementById('dibujoBarTexto').textContent='Editando zona de "'+t.nombre+'" — mueve los puntos';
+ document.getElementById('btnGuardarEdicionZona').classList.remove('d-none');
+ edicionActiva={territorioId:id,layer};
+}
+
+async function guardarEdicionZona(){
+ if(!edicionActiva) return;
+ let latlngs=edicionActiva.layer.getLatLngs()[0].map(p=>[p.lat,p.lng]);
+ let id=edicionActiva.territorioId;
+ edicionActiva.layer.editing.disable();
+ document.getElementById('btnGuardarEdicionZona').classList.add('d-none');
+ edicionActiva=null;
+ ocultarBarraDibujo();
+ const {error}=await sb.from('territorios').update({poligono:latlngs}).eq('id',id);
+ if(error){ showToast('Error: '+error.message); return; }
+ await loadTerritorios(); renderTerritorioPolygons();
+ if(typeof renderTerritoriosTable==='function') renderTerritoriosTable();
+ showToast('Zona actualizada');
+}
+
+function cancelarDibujoZona(){
+ if(dibujoActivo && dibujoActivo.drawHandler){ dibujoActivo.drawHandler.disable(); }
+ if(edicionActiva){ edicionActiva.layer.editing.disable(); renderTerritorioPolygons(); edicionActiva=null; }
+ document.getElementById('btnGuardarEdicionZona').classList.add('d-none');
+ ocultarBarraDibujo();
+}
+
+function ocultarBarraDibujo(){
+ dibujoActivo=null;
+ document.getElementById('dibujoBar').classList.add('d-none');
+}
+
+async function borrarZonaTerritorio(id){
+ if(!confirm('¿Quitar la zona dibujada de este territorio? Las cámaras de este territorio no se ven afectadas.')) return;
+ const {error}=await sb.from('territorios').update({poligono:null}).eq('id',id);
+ if(error){ showToast('Error: '+error.message); return; }
+ await loadTerritorios(); renderTerritorioPolygons();
+ if(typeof renderTerritoriosTable==='function') renderTerritoriosTable();
+ showToast('Zona eliminada');
+}
 
 let markers=[];let markersById={};let deleteId=null;
 const detailsModal=new bootstrap.Modal(document.getElementById('detailsModal'));
