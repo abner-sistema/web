@@ -823,6 +823,9 @@ let deletingPropietarioId = null;
 
 const toast=new bootstrap.Toast(document.getElementById('liveToast'),{delay:3500});
 function showToast(t){toast.hide();toastMsg.textContent=t;toast.show();}
+function normalizarBusqueda(s){
+ return (s||'').toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
+}
 
 /* ==================== CORRECCIÓN DE BACKDROPS Y MODALES ==================== */
 function limpiarBackdrops() {
@@ -1985,12 +1988,12 @@ function render(){
  clusterGroup.clearLayers();
  markers=[];
  markersById={};
- let q=document.getElementById('search').value.toLowerCase();
+ let q=normalizarBusqueda(document.getElementById('search').value);
  let propias=cams;
  let countPill = document.getElementById('countPill');
  if(countPill) countPill.textContent=propias.length;
  let data=propias.filter(c=>
-  (JSON.stringify(c)+' '+(territoriosById[c.territorio_id]?.nombre||'')+' '+(propietariosById[c.propietario_id]?.nombre||'')).toLowerCase().includes(q) &&
+  normalizarBusqueda(JSON.stringify(c)+' '+(territoriosById[c.territorio_id]?.nombre||'')+' '+(propietariosById[c.propietario_id]?.nombre||'')).includes(q) &&
   (filtroEstado===''||c.estado===filtroEstado) &&
   (filtroTV===''||c.territorio_id===filtroTV)
  );
