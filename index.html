@@ -6,6 +6,8 @@
 <title>Abner - Sistema de Cámaras</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<!-- Font Awesome para cumplir con los requerimientos de iconos -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
@@ -91,7 +93,7 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
 .navicon.active{background:linear-gradient(135deg,rgba(139,92,246,.28),rgba(34,211,238,.2));color:var(--purple);}
 .navicon:not(.active):hover{background:var(--panel2);color:var(--text);}
 
-/* Estilos personalizados para el menú desplegable del sidebar */
+/* Menú desplegable del sidebar */
 .sidebar-dropdown .dropdown-toggle::after { display: none; }
 .sidebar-dropdown .dropdown-menu {
   background: var(--panel);
@@ -246,6 +248,21 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
 .mtab.active{color:var(--purple);}
 .mtab i{font-size:19px;}
 
+/* Estilos específicos para el Centro de Alertas */
+.alert-card-summary {
+  border-radius: 12px;
+  padding: 15px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.alert-card-summary.red { background: linear-gradient(135deg, #ef4444, #b91c1c); }
+.alert-card-summary.orange { background: linear-gradient(135deg, #f97316, #c2410c); }
+.alert-card-summary.yellow { background: linear-gradient(135deg, #eab308, #a16207); }
+.alert-card-summary.purple { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
+
 /* Responsive */
 @media (max-width:991.98px){
   #sidebar{display:none;}
@@ -293,6 +310,7 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
 <button class="navicon active" id="navMapa" onclick="switchView('mapa')" title="Mapa y Cámaras"><i class="bi bi-map-fill"></i></button>
 <button class="navicon" id="navTerritorios" onclick="switchView('territorios')" title="Territorios"><i class="bi bi-geo-alt-fill"></i></button>
 <button class="navicon" id="navPropietarios" onclick="switchView('propietarios')" title="Propietarios"><i class="bi bi-person-lines-fill"></i></button>
+<button class="navicon" id="navAlertas" onclick="switchView('alertas')" title="Centro de Alertas"><i class="fa-solid fa-triangle-exclamation"></i></button>
 <button class="navicon" id="navEstadisticas" onclick="switchView('estadisticas')" title="Estadísticas"><i class="bi bi-bar-chart-fill"></i></button>
 <button class="navicon" id="navReporte" onclick="switchView('reporte')" title="Reporte de texto"><i class="bi bi-chat-square-text"></i></button>
 
@@ -366,6 +384,109 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
 </div>
 </div>
 </div>
+</div>
+
+<!-- NUEVA VISTA: CENTRO DE ALERTAS -->
+<div id="viewAlertas" class="d-none">
+  <div class="catalog-card">
+    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+      <div>
+        <h4 class="m-0 fw-bold"><i class="fa-solid fa-triangle-exclamation text-danger me-2"></i>Centro de Alertas</h4>
+        <p class="text-muted small m-0">Monitoreo automático de anomalías, riesgos en territorios y estados críticos del sistema</p>
+      </div>
+      <!-- Filtros del Centro de Alertas -->
+      <div class="d-flex gap-2 flex-wrap">
+        <select id="alertFilterEstado" class="form-select form-select-sm" style="width: 150px;" onchange="renderCentroAlertas()">
+          <option value="">Todos los estados</option>
+          <option value="inoperativa">Inoperativas</option>
+          <option value="desconectada">Desconectadas</option>
+          <option value="mantenimiento">Mantenimiento</option>
+        </select>
+        <select id="alertFilterTerritorio" class="form-select form-select-sm" style="width: 160px;" onchange="renderCentroAlertas()">
+          <option value="">Todos los territorios</option>
+        </select>
+        <select id="alertFilterPropietario" class="form-select form-select-sm" style="width: 160px;" onchange="renderCentroAlertas()">
+          <option value="">Todos los propietarios</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- 5. Resumen general (Tarjetas superiores) -->
+    <div class="row g-3 mb-4" id="alertSummaryCards">
+      <!-- Se llena dinámicamente -->
+    </div>
+
+    <!-- 1. Cámaras inoperativas (Prioridad crítica) -->
+    <div class="card p-3 mb-4" style="border-color: var(--danger); background: var(--panel2);">
+      <h5 class="fw-bold text-danger mb-3"><i class="fa-solid fa-circle-exclamation me-2"></i>1. Cámaras Inoperativas (Prioridad Crítica)</h5>
+      <div class="table-responsive">
+        <table class="table catalog-table align-middle">
+          <thead>
+            <tr>
+              <th>Cámara</th>
+              <th>Territorio</th>
+              <th>Propietario</th>
+              <th>Fecha de Actualización</th>
+              <th style="text-align: right;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tableInoperativas">
+            <!-- Dinámico -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+      <!-- 2. Territorios con riesgo -->
+      <div class="col-lg-6">
+        <div class="card p-3 h-100" style="background: var(--panel2);">
+          <h5 class="fw-bold mb-3"><i class="fa-solid fa-map-location-dot me-2 text-warning"></i>2. Territorios con Riesgo</h5>
+          <div class="table-responsive">
+            <table class="table catalog-table align-middle">
+              <thead>
+                <tr>
+                  <th>Territorio</th>
+                  <th>Total / Afectadas</th>
+                  <th>% Inoperativo</th>
+                  <th>Nivel</th>
+                </tr>
+              </thead>
+              <tbody id="tableTerritoriosRiesgo">
+                <!-- Dinámico -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3 & 4. Cámaras Desconectadas y Mantenimiento -->
+      <div class="col-lg-6">
+        <div class="card p-3 h-100 mb-3" style="background: var(--panel2);">
+          <h5 class="fw-bold text-secondary mb-3"><i class="fa-solid fa-plug-circle-xmark me-2"></i>3. Cámaras Desconectadas</h5>
+          <div id="listDesconectadas" class="d-flex flex-column gap-2" style="max-height: 200px; overflow-y: auto;">
+            <!-- Dinámico -->
+          </div>
+        </div>
+
+        <div class="card p-3" style="background: var(--panel2);">
+          <h5 class="fw-bold text-warning mb-3"><i class="fa-solid fa-screwdriver-wrench me-2"></i>4. Cámaras en Mantenimiento</h5>
+          <div id="listMantenimiento" class="d-flex flex-column gap-2" style="max-height: 200px; overflow-y: auto;">
+            <!-- Dinámico -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. Historial reciente -->
+    <div class="card p-3" style="background: var(--panel2);">
+      <h5 class="fw-bold mb-3"><i class="fa-solid fa-clock-rotate-left me-2 text-purple"></i>6. Historial Reciente de Cambios de Estado</h5>
+      <ul class="list-group list-group-flush bg-transparent" id="listHistorialReciente">
+        <!-- Dinámico -->
+      </ul>
+    </div>
+
+  </div>
 </div>
 
 <!-- VISTA COMPLETA DEDICADA: TERRITORIOS -->
@@ -496,7 +617,7 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
 <button class="mtab active" id="mtabMapa" onclick="switchView('mapa')"><i class="bi bi-map-fill"></i>Mapa</button>
 <button class="mtab" id="mtabTerritorios" onclick="switchView('territorios')"><i class="bi bi-geo-alt-fill"></i>Territ.</button>
 <button class="mtab" id="mtabPropietarios" onclick="switchView('propietarios')"><i class="bi bi-person-lines-fill"></i>Propiet.</button>
-<button class="mtab" id="mtabEstadisticas" onclick="switchView('estadisticas')"><i class="bi bi-bar-chart-fill"></i>Estad.</button>
+<button class="mtab" id="mtabAlertas" onclick="switchView('alertas')"><i class="fa-solid fa-triangle-exclamation"></i>Alertas</button>
 <button class="mtab" onclick="toggleMasModal()"><i class="bi bi-grid-3x3-gap-fill"></i>Más</button>
 </div>
 
@@ -505,6 +626,8 @@ h1,h2,h3,h4,h5,.brand{font-family:'Poppins',system-ui,sans-serif;}
 <div class="modal-header"><h5>Más opciones</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
 <div class="modal-body d-grid gap-2">
 <button class="btn btn-secondary text-start" onclick="cerrarMasYEjecutar(toggleTheme)"><i class="bi bi-sun-fill me-2"></i>Cambiar Tema (Claro/Oscuro)</button>
+<button class="btn btn-secondary text-start" onclick="cerrarMasYEjecutar(()=>switchView('alertas'))"><i class="fa-solid fa-triangle-exclamation me-2"></i>Centro de Alertas</button>
+<button class="btn btn-secondary text-start" onclick="cerrarMasYEjecutar(()=>switchView('estadisticas'))"><i class="bi bi-bar-chart-fill me-2"></i>Estadísticas</button>
 <button class="btn btn-secondary text-start" onclick="cerrarMasYEjecutar(()=>switchView('reporte'))"><i class="bi bi-chat-square-text me-2"></i>Reporte de texto</button>
 <button class="btn btn-secondary text-start" onclick="cerrarMasYEjecutar(exportExcel)"><i class="bi bi-file-earmark-excel me-2"></i>Exportar Excel</button>
 <button class="btn btn-secondary text-start" onclick="cerrarMasYEjecutar(exportPDF)"><i class="bi bi-file-earmark-pdf me-2"></i>Exportar PDF</button>
@@ -735,19 +858,21 @@ function switchView(viewName){
  document.getElementById('viewMainMapa').classList.toggle('d-none', viewName !== 'mapa');
  document.getElementById('viewTerritorios').classList.toggle('d-none', viewName !== 'territorios');
  document.getElementById('viewPropietarios').classList.toggle('d-none', viewName !== 'propietarios');
+ document.getElementById('viewAlertas')?.classList.toggle('d-none', viewName !== 'alertas');
  document.getElementById('viewEstadisticas')?.classList.toggle('d-none', viewName !== 'estadisticas');
  document.getElementById('viewReporte')?.classList.toggle('d-none', viewName !== 'reporte');
 
  document.getElementById('navMapa').classList.toggle('active', viewName === 'mapa');
  document.getElementById('navTerritorios').classList.toggle('active', viewName === 'territorios');
  document.getElementById('navPropietarios').classList.toggle('active', viewName === 'propietarios');
+ document.getElementById('navAlertas')?.classList.toggle('active', viewName === 'alertas');
  document.getElementById('navEstadisticas')?.classList.toggle('active', viewName === 'estadisticas');
  document.getElementById('navReporte')?.classList.toggle('active', viewName === 'reporte');
 
  document.getElementById('mtabMapa')?.classList.toggle('active', viewName === 'mapa');
  document.getElementById('mtabTerritorios')?.classList.toggle('active', viewName === 'territorios');
  document.getElementById('mtabPropietarios')?.classList.toggle('active', viewName === 'propietarios');
- document.getElementById('mtabEstadisticas')?.classList.toggle('active', viewName === 'estadisticas');
+ document.getElementById('mtabAlertas')?.classList.toggle('active', viewName === 'alertas');
 
  const titleEl = document.getElementById('topstripTitle');
  if(viewName === 'mapa'){
@@ -758,6 +883,9 @@ function switchView(viewName){
  } else if(viewName === 'propietarios'){
    titleEl.innerHTML = `<i class="bi bi-person-lines-fill text-cyan"></i> Propietarios <span class="count-pill">${propietarios.length}</span>`;
    renderPropietariosTable();
+ } else if(viewName === 'alertas'){
+   titleEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-danger"></i> Centro de Alertas`;
+   renderCentroAlertas();
  } else if(viewName === 'estadisticas'){
    titleEl.innerHTML = `<i class="bi bi-bar-chart-fill text-purple"></i> Estadísticas`;
    renderCharts();
@@ -836,9 +964,10 @@ function renderStationPill(){
 async function cambiarEstacionVista(id){
  viewingStationId=id;
  filtroEstado=''; filtroTV=''; document.getElementById('search').value='';
- renderFilterChips(); await loadTerritorios(); await loadPropietarios(); await loadCams(); populateFilterTV(); render(); renderStats();
+ renderFilterChips(); await loadTerritorios(); await loadPropietarios(); await loadCams(); populateFilterTV(); populateAlertFilters(); render(); renderStats();
  if(activeView==='territorios') renderTerritoriosTable();
  if(activeView==='propietarios') renderPropietariosTable();
+ if(activeView==='alertas') renderCentroAlertas();
  if(activeView==='estadisticas') renderCharts();
  if(activeView==='reporte') actualizarReporteFiltro();
 }
@@ -852,7 +981,7 @@ async function enterApp(){
  await loadTerritorios();
  await loadPropietarios();
  await loadCams();
- populateFilterTV(); render(); renderStats();
+ populateFilterTV(); populateAlertFilters(); render(); renderStats();
 }
 
 async function loadCams(){
@@ -905,6 +1034,218 @@ function mostrarWhatsappPropietario(){
  let p=propietariosById[document.getElementById('propietario').value];
  document.getElementById('propietarioWhatsappInfo').innerHTML=
   '<i class="bi bi-whatsapp"></i> '+(p&&p.whatsapp?'WhatsApp: '+p.whatsapp:'Sin WhatsApp registrado para este propietario');
+}
+
+/* ==================== POBLAR FILTROS DEL CENTRO DE ALERTAS ==================== */
+function populateAlertFilters() {
+  const selTerritorio = document.getElementById('alertFilterTerritorio');
+  const selPropietario = document.getElementById('alertFilterPropietario');
+  if(!selTerritorio || !selPropietario) return;
+
+  selTerritorio.innerHTML = '<option value="">Todos los territorios</option>' + 
+    territorios.map(t => `<option value="${t.id}">${t.nombre}</option>`).join('');
+
+  selPropietario.innerHTML = '<option value="">Todos los propietarios</option>' + 
+    propietarios.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+}
+
+/* ==================== LÓGICA DEL CENTRO DE ALERTAS ==================== */
+function renderCentroAlertas() {
+  const filterEstado = document.getElementById('alertFilterEstado')?.value || '';
+  const filterTerritorio = document.getElementById('alertFilterTerritorio')?.value || '';
+  const filterPropietario = document.getElementById('alertFilterPropietario')?.value || '';
+
+  // Filtrar cámaras según los selectores del Centro de Alertas
+  let filteredCams = cams.filter(c => {
+    if (filterEstado && c.estado !== filterEstado) return false;
+    if (filterTerritorio && c.territorio_id !== filterTerritorio) return false;
+    if (filterPropietario && c.propietario_id !== filterPropietario) return false;
+    return true;
+  });
+
+  // Datos globales sin filtro estricto de UI para cálculos generales
+  const totalCams = cams.length;
+  const inoperativasList = cams.filter(c => c.estado === 'inoperativa');
+  const desconectadasList = cams.filter(c => c.estado === 'desconectada');
+  const mantenimientoList = cams.filter(c => c.estado === 'mantenimiento');
+  const totalAlertasActivas = inoperativasList.length + desconectadasList.length + mantenimientoList.length;
+
+  // 5. Resumen general (Tarjetas superiores)
+  const summaryEl = document.getElementById('alertSummaryCards');
+  if (summaryEl) {
+    summaryEl.innerHTML = `
+      <div class="col-md-3">
+        <div class="alert-card-summary red">
+          <div>
+            <div class="small fw-semibold text-white-50">Cámaras Inoperativas</div>
+            <div class="fs-4 fw-bold">${inoperativasList.length}</div>
+          </div>
+          <i class="fa-solid fa-circle-exclamation fs-2 text-white-50"></i>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="alert-card-summary orange">
+          <div>
+            <div class="small fw-semibold text-white-50">Cámaras Desconectadas</div>
+            <div class="fs-4 fw-bold">${desconectadasList.length}</div>
+          </div>
+          <i class="fa-solid fa-plug-circle-xmark fs-2 text-white-50"></i>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="alert-card-summary yellow">
+          <div>
+            <div class="small fw-semibold text-white-50">Cámaras en Mantenimiento</div>
+            <div class="fs-4 fw-bold">${mantenimientoList.length}</div>
+          </div>
+          <i class="fa-solid fa-screwdriver-wrench fs-2 text-white-50"></i>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="alert-card-summary purple">
+          <div>
+            <div class="small fw-semibold text-white-50">Total Alertas Activas</div>
+            <div class="fs-4 fw-bold">${totalAlertasActivas}</div>
+          </div>
+          <i class="fa-solid fa-triangle-exclamation fs-2 text-white-50"></i>
+        </div>
+      </div>
+    `;
+  }
+
+  // 1. Cámaras inoperativas (Prioridad crítica)
+  const tableInopEl = document.getElementById('tableInoperativas');
+  let targetInop = filteredCams.filter(c => c.estado === 'inoperativa');
+  if (tableInopEl) {
+    if (!targetInop.length) {
+      tableInopEl.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-3">No hay cámaras inoperativas que coincidan con los filtros.</td></tr>`;
+    } else {
+      tableInopEl.innerHTML = targetInop.map(c => {
+        let tvNombre = territoriosById[c.territorio_id]?.nombre || 'Sin TV';
+        let propNombre = propietariosById[c.propietario_id]?.nombre || 'Sin Propietario';
+        let fechaUpd = c.updated_at ? new Date(c.updated_at).toLocaleString() : (c.created_at ? new Date(c.created_at).toLocaleString() : 'No disponible');
+        return `<tr style="border-left: 4px solid var(--danger);">
+          <td class="fw-bold text-danger">${c.nombre}</td>
+          <td>${tvNombre}</td>
+          <td>${propNombre}</td>
+          <td><small class="text-muted">${fechaUpd}</small></td>
+          <td style="text-align: right;">
+            <button class="btn btn-sm btn-outline-danger" onclick="focusCam('${c.id}'); switchView('mapa');" title="Ver en mapa"><i class="bi bi-geo-alt-fill"></i></button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="viewDetails('${c.id}')" title="Detalles"><i class="bi bi-eye-fill"></i></button>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+  }
+
+  // 2. Territorios con riesgo
+  const tableRiesgoEl = document.getElementById('tableTerritoriosRiesgo');
+  if (tableRiesgoEl) {
+    if (!territorios.length) {
+      tableRiesgoEl.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-3">No hay territorios registrados.</td></tr>`;
+    } else {
+      let riesgoRows = territorios.map(t => {
+        let camsTerritorio = cams.filter(c => c.territorio_id === t.id);
+        let totalT = camsTerritorio.length;
+        let inopT = camsTerritorio.filter(c => c.estado === 'inoperativa').length;
+        let pct = totalT > 0 ? (inopT / totalT) * 100 : 0;
+        
+        let badgeColor = 'bg-success';
+        let nivelTexto = 'Normal';
+        if (pct > 40) {
+          badgeColor = 'bg-danger';
+          nivelTexto = 'Riesgo Crítico (>40%)';
+        } else if (pct > 20) {
+          badgeColor = 'bg-warning text-dark';
+          nivelTexto = 'Riesgo Alto (>20%)';
+        }
+
+        return `<tr>
+          <td class="fw-semibold">${t.nombre}</td>
+          <td>${inopT} / ${totalT}</td>
+          <td>${pct.toFixed(1)}%</td>
+          <td><span class="badge ${badgeColor}">${nivelTexto}</span></td>
+        </tr>`;
+      });
+      tableRiesgoEl.innerHTML = riesgoRows.join('');
+    }
+  }
+
+  // 3. Cámaras desconectadas
+  const listDesconEl = document.getElementById('listDesconectadas');
+  let targetDescon = filteredCams.filter(c => c.estado === 'desconectada');
+  if (listDesconEl) {
+    if (!targetDescon.length) {
+      listDesconEl.innerHTML = `<div class="text-muted small text-center py-2">No hay cámaras desconectadas.</div>`;
+    } else {
+      listDesconEl.innerHTML = targetDescon.map(c => {
+        let tvNombre = territoriosById[c.territorio_id]?.nombre || 'Sin TV';
+        return `<div class="p-2 rounded bg-panel border d-flex align-items-center justify-content-between" style="border-left: 3px solid #6b7280 !important;">
+          <div>
+            <div class="fw-semibold text-secondary">${c.nombre}</div>
+            <div class="small text-muted">${tvNombre} · Dirección: ${c.direccion || 'S/N'}</div>
+          </div>
+          <button class="btn btn-sm btn-outline-secondary" onclick="focusCam('${c.id}'); switchView('mapa');"><i class="bi bi-geo-alt-fill"></i></button>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // 4. Cámaras en mantenimiento (con detección de mantenimiento prolongado > 7 días por ejemplo)
+  const listMantEl = document.getElementById('listMantenimiento');
+  let targetMant = filteredCams.filter(c => c.estado === 'mantenimiento');
+  if (listMantEl) {
+    if (!targetMant.length) {
+      listMantEl.innerHTML = `<div class="text-muted small text-center py-2">No hay cámaras en mantenimiento.</div>`;
+    } else {
+      let ahora = new Date();
+      listMantEl.innerHTML = targetMant.map(c => {
+        let tvNombre = territoriosById[c.territorio_id]?.nombre || 'Sin TV';
+        let fechaBase = c.updated_at ? new Date(c.updated_at) : (c.created_at ? new Date(c.created_at) : ahora);
+        let diasDiff = Math.floor((ahora - fechaBase) / (1000 * 60 * 60 * 24));
+        let esProlongado = diasDiff > 7;
+
+        return `<div class="p-2 rounded bg-panel border d-flex align-items-center justify-content-between" style="border-left: 3px solid #eab308 !important;">
+          <div>
+            <div class="fw-semibold text-warning">${c.nombre} ${esProlongado ? '<span class="badge bg-danger ms-1" style="font-size:0.6rem;">Mantenimiento Prolongado (' + diasDiff + 'd)</span>' : ''}</div>
+            <div class="small text-muted">${tvNombre} · En mantenimiento desde hace ${diasDiff} día(s)</div>
+          </div>
+          <button class="btn btn-sm btn-outline-warning" onclick="focusCam('${c.id}'); switchView('mapa');"><i class="bi bi-geo-alt-fill"></i></button>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // 6. Historial reciente (cronológico simulado a partir de las fechas de actualización o creación existentes)
+  const listHistorialEl = document.getElementById('listHistorialReciente');
+  if (listHistorialEl) {
+    let ordenadas = [...cams].sort((a, b) => {
+      let fa = new Date(a.updated_at || a.created_at || 0);
+      let fb = new Date(b.updated_at || b.created_at || 0);
+      return fb - fa;
+    }).slice(0, 10);
+
+    if (!ordenadas.length) {
+      listHistorialEl.innerHTML = `<li class="list-group-item bg-transparent text-muted text-center">No hay registros recientes.</li>`;
+    } else {
+      listHistorialEl.innerHTML = ordenadas.map(c => {
+        let fechaStr = c.updated_at ? new Date(c.updated_at).toLocaleString() : (c.created_at ? new Date(c.created_at).toLocaleString() : 'Fecha desconocida');
+        let estadoLabel = estadoInfo(c.estado)?.label || c.estado;
+        let iconoCambio = 'fa-arrow-right-arrow-left text-purple';
+        if (c.estado === 'inoperativa') iconoCambio = 'fa-circle-exclamation text-danger';
+        if (c.estado === 'operativa') iconoCambio = 'fa-circle-check text-success';
+        if (c.estado === 'mantenimiento') iconoCambio = 'fa-screwdriver-wrench text-warning';
+
+        return `<li class="list-group-item bg-transparent d-flex align-items-center gap-3 py-2 border-bottom">
+          <i class="fa-solid ${iconoCambio} fs-5"></i>
+          <div style="flex: 1;">
+            <div class="small fw-semibold">Cámara <strong>${c.nombre}</strong> pasó a estado <span class="badge bg-secondary">${estadoLabel}</span></div>
+            <div class="text-muted" style="font-size: 0.75rem;"><i class="bi bi-clock me-1"></i>${fechaStr}</div>
+          </div>
+        </li>`;
+      }).join('');
+    }
+  }
 }
 
 /* ==================== VISTA Y EDICIÓN EN LÍNEA: TERRITORIOS ==================== */
@@ -992,7 +1333,7 @@ async function saveInlineTerritorio(id){
  if(error){ showToast('Error: ' + error.message); return; }
  editingTerritorioId = null;
  await loadTerritorios(); await loadCams();
- populateFilterTV(); render(); renderStats();
+ populateFilterTV(); populateAlertFilters(); render(); renderStats();
  renderTerritoriosTable();
  showToast(id === 'new' ? 'Territorio agregado' : 'Territorio actualizado');
 }
@@ -1016,7 +1357,7 @@ async function confirmDeleteInlineTerritorio(id){
  if(error){ showToast('Error al eliminar: ' + error.message); return; }
  deletingTerritorioId = null;
  await loadTerritorios(); await loadCams();
- populateFilterTV(); render(); renderStats();
+ populateFilterTV(); populateAlertFilters(); render(); renderStats();
  renderTerritoriosTable();
  showToast('Territorio eliminado');
 }
@@ -1117,7 +1458,7 @@ async function saveInlinePropietario(id){
  if(error){ showToast('Error: ' + error.message); return; }
  editingPropietarioId = null;
  await loadPropietarios(); await loadCams();
- render(); renderStats();
+ populateAlertFilters(); render(); renderStats();
  renderPropietariosTable();
  showToast(id === 'new' ? 'Propietario agregado' : 'Propietario actualizado');
 }
@@ -1141,7 +1482,7 @@ async function confirmDeleteInlinePropietario(id){
  if(error){ showToast('Error al eliminar: ' + error.message); return; }
  deletingPropietarioId = null;
  await loadPropietarios(); await loadCams();
- render(); renderStats();
+ populateAlertFilters(); render(); renderStats();
  renderPropietariosTable();
  showToast('Propietario eliminado');
 }
@@ -1192,7 +1533,7 @@ async function guardarQuickTerritorio(){
  document.getElementById('tv').value = data.id;
  document.getElementById('quickAddTerritorioBox').classList.add('d-none');
  nombreInput.value = '';
- populateFilterTV(); renderStats();
+ populateFilterTV(); populateAlertFilters(); renderStats();
  showToast('Territorio creado y seleccionado');
 }
 
@@ -1213,7 +1554,7 @@ async function guardarQuickPropietario(){
  document.getElementById('quickAddPropietarioBox').classList.add('d-none');
  nombreInput.value = ''; wppInput.value = '';
  mostrarWhatsappPropietario();
- renderStats();
+ populateAlertFilters(); renderStats();
  showToast('Propietario creado y seleccionado');
 }
 
@@ -1343,17 +1684,19 @@ async function saveCam(){
    maps:maps.value,
    foto:img,
    propietario_id:propietario.value,
-   estacion_id:viewingStationId
+   estacion_id:viewingStationId,
+   updated_at: new Date().toISOString()
   };
   let error, esNuevo=!camId.value;
   if(!esNuevo){
    ({error}=await sb.from('camaras').update(camData).eq('id',camId.value));
   }else{
+   camData.created_at = new Date().toISOString();
    ({error}=await sb.from('camaras').insert(camData));
   }
   window.saving=false; guardarBtn.disabled=false;
   if(error){ showToast('Error al guardar: '+error.message); return; }
-  await loadCams(); populateFilterTV(); render(); renderStats(); modal.hide(); selectedLatLng=null;
+  await loadCams(); populateFilterTV(); populateAlertFilters(); render(); renderStats(); modal.hide(); selectedLatLng=null;
   showToast(esNuevo?'Cámara agregada':'Cámara actualizada');
  };
  let f=foto.files[0];
@@ -1398,7 +1741,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  confirmDeleteBtn.onclick=async()=>{
   const {error}=await sb.from('camaras').delete().eq('id',deleteId);
   if(error){ showToast('Error al eliminar: '+error.message); deleteModal.hide(); return; }
-  await loadCams(); populateFilterTV(); render(); renderStats(); deleteModal.hide();
+  await loadCams(); populateFilterTV(); populateAlertFilters(); render(); renderStats(); deleteModal.hide();
   showToast('Cámara eliminada');
  };
 });
